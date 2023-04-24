@@ -45,6 +45,7 @@ clean:
 	@rm -rf ./*.gc*
 	@rm -rf ./*.dSYM
 	@rm -rf report*
+	@rm -rf main.app
 
 obj: $(LIB_OBJ)
 

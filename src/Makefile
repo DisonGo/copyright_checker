@@ -82,5 +82,5 @@ gcov_report: clean set_report_gcc test
 	$(OPEN_CMD) ./report/index.html
 
 main: $(PROJECT_NAME).a main.cc
-	$(gcc) -I${LIB_INC_DIR} $^ -o $@
+	$(gcc) -I${LIB_INC_DIR} $^ -o $@.app
 .PHONY: clean obj clear $(PROJECT_NAME) test clang-replace all $(BUILD_DIR)/$(PROJECT_NAME).a set_debug_gcc set_report_gcc gcov_report

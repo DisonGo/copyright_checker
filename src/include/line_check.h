@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 int GetMatchPercentage(std::vector<std::string>& ref,
                        std::vector<std::string>& check);

@@ -4,3 +4,5 @@
 *.DS_Store
 main.app
 settings.json
+*.dSYM
+launch.json

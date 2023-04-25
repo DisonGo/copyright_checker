@@ -5,7 +5,7 @@ LIB_SRC_DIR		= ./src
 LIB_O_DIR		= $(ODIR)/$(LIB_SRC_DIR)
 
 TESTS_DIR		= tests
-BUILD_DIR		= ../src
+BUILD_DIR		= ../src/lib
 UNAME_S 		:= $(shell uname -s)
 TEST_SRC		= $(TESTS_DIR)/${PROJECT_NAME}_test.cc
 Flags 			= -std=c++17 -lstdc++ -Werror -Wall -Wextra $(DEBUG)
@@ -32,12 +32,12 @@ endif
 all: clear $(BUILD_DIR)/$(PROJECT_NAME).a
 
 $(LIB_O_DIR)/%.o: $(LIB_SRC_DIR)/%.cc
-	$(gcc) -lcheck $(ADD_LIB) -I${LIB_INC_DIR}  $< -c -o $@
+	$(gcc) -lcheck $(ADD_LIB) -I${LIB_INC_DIR}  $< -c -o $@ -L./lib
 clear:
 	clear
 
 clean:
-	@rm -rf $(BUILD_DIR)/$(PROJECT_NAME).a test *.out
+	@rm -rf $(BUILD_DIR)/lib$(PROJECT_NAME).a test *.out
 	@rm -rf $(ODIR)/*.o $(ODIR)/*.gc*
 	@rm -rf $(ODIR)/*/*.o $(ODIR)/*/*.gc*
 	@rm -rf $(ODIR)/*/*/*.o $(ODIR)/*/*/*.gc*
@@ -59,7 +59,7 @@ clang-replace:
 	clang-format --style=Google -i $(shell find . -name '*.cc') $(shell find . -name '*.h')
 
 $(BUILD_DIR)/$(PROJECT_NAME).a: obj
-	ar rcs $@ $(LIB_O_DIR)/*.o
+	ar rcs $(BUILD_DIR)/lib$(PROJECT_NAME).a $(LIB_O_DIR)/*.o
 $(PROJECT_NAME).a: $(BUILD_DIR)/$(PROJECT_NAME).a
 debug:
 	$(eval DEBUG = -g)
@@ -83,5 +83,5 @@ gcov_report: clean set_report_gcc test
 	$(OPEN_CMD) ./report/index.html
 
 main: $(PROJECT_NAME).a main.cc
-	$(gcc) -I${LIB_INC_DIR} $^ -o $@.app
+	$(gcc) -I${LIB_INC_DIR} -L./lib $@.cc -o $@.app -l$(PROJECT_NAME) -lssl -lcrypto
 .PHONY: clean obj clear $(PROJECT_NAME) test clang-replace all $(BUILD_DIR)/$(PROJECT_NAME).a set_debug_gcc set_report_gcc gcov_report

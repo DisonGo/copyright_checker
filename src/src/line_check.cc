@@ -6,7 +6,7 @@ int GetLineInfo(const std::string& reference_file, const std::string& checked_fi
     std::ifstream ref(reference_file);
     std::ifstream checked(checked_file);
     if (!ref.is_open() || !checked.is_open()) {
-        std::cout << "Reference or checked file is not exist.";
+        std::cout << "Reference or checked file is not exist.\n";
         return 0;
     }
 
@@ -71,7 +71,7 @@ inline bool IsForbidden(const char symbol) {
 }
 
 inline bool IsPreProcessing(const std::string& str) {
-    std::vector<std::string> pre_processing = {"#include", "#ifndef", "#define", "#endif"};
+    std::vector<std::string> pre_processing = {"#include", "#ifndef", "#define", "#endif", "int main()"};
     for (size_t i = 0; i < 4; i++)
         if (str.find(pre_processing[i], 0) != std::string::npos) return true;
     return false;

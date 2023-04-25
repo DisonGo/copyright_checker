@@ -1,25 +1,19 @@
 
+#include <fstream>
 #include <iostream>
 #include <vector>
-#include <fstream>
 
 #include "logger.h"
 //#include "signature_check.h"
 #include "line_check.h"
-
+#include "repo_manager.h"
 int main() {
-
-    srand(time(NULL));
-
-    std::string git_info = "https://hello_world/username";
-    std::ofstream obj;
-    obj.open("output.txt");
-    InitLog(obj, std::string("manhunte"));
-    
-    int line_info = GetLineInfo("/Users/burnsdov/Eye_of_Verter/src/src/reference.txt", "/Users/burnsdov/Eye_of_Verter/src/src/dolboeb.txt");
-    std::cout << line_info << "%";
-
-
-
-    return 0;
+  RepoManager man;
+  RepoURLs urls = man.FetchRepoUrls("s21_math");
+  man.DownloadRepos("/Users/evverenn/goinfre/repos", urls);
+  std::cout << "\nDownloaded repositories:\n";
+  for (auto& repo : man.repoPaths) {
+    std::cout << repo.first << "\t" << repo.second << "\n";
+  }
+  return 0;
 }

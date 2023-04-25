@@ -14,7 +14,8 @@ LIB_SOURCES		= $(shell find $(LIB_SRC_DIR) -name '*.cc')
 REPORT_FILES	= $(shell find . -name '*.gcno') $(shell find . -name '*.gcda')
 INC				:= $(shell find $(LIB_INC_DIR) -name '*.h')
 LIB_OBJ 		= $(patsubst %.cc,$(ODIR)/%.o, $(LIB_SOURCES))
-
+SHARED_LIB_INCLUDE = ./include
+SHARED_LIB_BIN = ./lib
 ifeq ($(UNAME_S),Linux)
 	gcc += -D OS_LINUX
 	TEST_CHECK_F= -lcheck
@@ -32,7 +33,7 @@ endif
 all: clear $(BUILD_DIR)/$(PROJECT_NAME).a
 
 $(LIB_O_DIR)/%.o: $(LIB_SRC_DIR)/%.cc
-	$(gcc) -lcheck $(ADD_LIB) -I${LIB_INC_DIR}  $< -c -o $@ -L./lib
+	$(gcc) -lcheck $(ADD_LIB) -I${LIB_INC_DIR} -I${SHARED_LIB_INCLUDE}  $< -c -o $@ -L./lib
 clear:
 	clear
 
@@ -81,7 +82,7 @@ gcov_report: clean set_report_gcc test
 	@lcov -t ./gcov -o report.info -c -d ./gcov
 	@genhtml -o report report.info
 	$(OPEN_CMD) ./report/index.html
-
+#-Wl,-rpath,${SHARED_LIB_BIN} 
 main: $(PROJECT_NAME).a main.cc
-	$(gcc) -I${LIB_INC_DIR} -L./lib $@.cc -o $@.app -l$(PROJECT_NAME) -lssl -lcrypto
+	$(gcc) -I${LIB_INC_DIR} $@.cc -o $@.app -L./lib -l$(PROJECT_NAME) -lssl -lcrypto -Wl,-rpath,${SHARED_LIB_BIN} -lgit2
 .PHONY: clean obj clear $(PROJECT_NAME) test clang-replace all $(BUILD_DIR)/$(PROJECT_NAME).a set_debug_gcc set_report_gcc gcov_report

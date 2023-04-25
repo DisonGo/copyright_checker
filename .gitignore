@@ -3,6 +3,5 @@
 *.dll
 *.DS_Store
 main.app
-settings.json
+.vscode
 *.dSYM
-launch.json

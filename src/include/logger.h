@@ -6,6 +6,5 @@
 
 void InitLog(std::ofstream& log_file, std::string peer_name);
 void WriteResult(std::ofstream& log_file, size_t id, std::string git_link,
-                 int signature_percent, int line_percent);
-
+                 int signature_percent, int line_percent, std::string file1, std::string file2);
 #endif  //  SRC_INCLUDE_LOGGER_H

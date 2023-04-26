@@ -1,7 +1,8 @@
-
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <vector>
+#include <algorithm>
 
 #include "logger.h"
 #include "signature_check.h"
@@ -12,21 +13,37 @@
 std::string GetProjectName(int argc, char* argv[]);
 std::string GetPath();
 
+struct AnalyzeInfo {
+    size_t id{};
+    std::string git_path;
+    size_t signature_info{};
+    size_t line_info{};
+    std::string file_path_ref;
+    std::string file_path_review;
+};
+
+struct pred
+{
+    bool operator()(const AnalyzeInfo& first, const AnalyzeInfo& second)
+    {
+        return first.signature_info < second.signature_info;
+    }
+};
+
+
+
 int main(int argc, char* argv[]) {
   if (argc < 3) {
       std::cout << "First argument should be project name.\n";
       std::cout << "Second argument should be peer name.\n";
       return 0;
   }
-  RepoManager man;
+  RepoManager man(GetPath());
   std::string ProjectName = GetProjectName(argc, argv);
   RepoURLs urls = man.FetchRepoUrls(ProjectName);
-  man.DownloadRepos(GetPath(), urls);
+  man.DownloadRepos(urls);
   std::cout << "\nDownloaded repositories:\n";
   
-  std::ofstream config_file("output.ini");
-  InitLog(config_file, argv[2]);
-
   for (auto& repo : man.repoPaths) {
     std::cout << repo.first << "\t" << repo.second << "\n";
   }
@@ -34,6 +51,7 @@ int main(int argc, char* argv[]) {
   size_t id{};
   size_t signature{};
   size_t line{};
+  std::vector<AnalyzeInfo> data;
   FilePathArrays peer_paths = FileManager::FindSourcesC("./PeerReview");
   for (auto& path : man.repoPaths) {
     FilePathArrays paths = FileManager::FindSourcesC(path.second);
@@ -41,11 +59,28 @@ int main(int argc, char* argv[]) {
         for (auto& review_file : peer_paths.second) {
             signature = GetSignatureInfo(filepath, review_file);
             line = GetLineInfo(filepath, review_file);
-            if (signature > 50 || line > 50) WriteResult(config_file, id++, path.first, signature, line);
+            if (signature > 45 || line > 45) {
+                size_t counter = data.size() - 1;
+                data[counter].id = id++;
+                data[counter].git_path = path.first;
+                data[counter].signature_info = signature;
+                data[counter].line_info = line;
+                data[counter].file_path_ref = filepath;
+                data[counter].file_path_review = review_file;
+            }            
         }
     }
   }
 
+
+  std::ofstream config_file("output.ini");
+  InitLog(config_file, argv[2]);
+
+  std::sort(data.begin(), data.end(), pred());
+  for (auto& element : data) {
+      WriteResult(config_file, element.id, element.git_path, element.signature_info, element.line_info, 
+      element.file_path_ref, element.file_path_review);
+  }
 
   return 0;
 }

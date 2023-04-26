@@ -11,11 +11,11 @@ void InitLog(std::ofstream& log_file, std::string peer_name) {
 }
 
 void WriteResult(std::ofstream& log_file, size_t id, std::string git_link,
-                 int signature_percent, int line_percent) {
+                 int signature_percent, int line_percent, std::string file1, std::string file2) {
   if (!log_file.is_open()) {
     std::cout << "File is not exist. . .";
     return;
   }
   log_file << id << "\t" << signature_percent << "\t\t\t" << line_percent
-           << "\t\t\t" << git_link << "\n";
+           << "\t\t\t" << git_link << "\tFile 1: " << file1 << "\tFile 2:" << file2 << std::endl;
 }

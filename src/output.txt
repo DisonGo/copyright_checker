@@ -1,2 +1,0 @@
-New peer is [ manhunte ]
-Id	Signature	EachLine	Reference

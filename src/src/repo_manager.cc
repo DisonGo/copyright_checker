@@ -20,17 +20,41 @@ string RepoManager::ParseGitNameFromStr(string str) {
   string gitName = userName + '/' + Name;
   return gitName;
 }
+bool RepoManager::IsKeywordUsed(const string& keyword) {
+  return repoPaths.find(keyword) != repoPaths.end();
+}
+bool RepoManager::IsPairDownloaded(const RepoPair& pair,
+                                   const UniqueRepoPairs& pair_set) {
+  return pair_set.find(pair) != pair_set.end();
+}
 void RepoManager::CheckRepoDir() {
   const string gitPrefix = "https://github.com/";
-  vector<string> users = FileManager::FindSubDirs(repoDir);
-  for (auto& user : users) {
-    vector<string> repos = FileManager::FindSubDirs(repoDir + "/" + user);
-    for (auto& repo : repos) {
-      string repoPrefix = user + '/' + repo;
-      string gitUrl = gitPrefix + repoPrefix + ".git";
-      repoPaths.insert({gitUrl, repoDir + "/" + repoPrefix});
+  vector<string> keywords = FileManager::FindSubDirs(repoDir);
+  for (auto& keyword : keywords) {
+    string keyword_path = repoDir + "/" + keyword;
+    vector<string> users = FileManager::FindSubDirs(keyword_path);
+    UniqueRepoPairs repo_pairs;
+    for (auto& user : users) {
+      string user_path = keyword_path + "/" + user;
+      vector<string> repos = FileManager::FindSubDirs(user_path);
+      for (auto& repo : repos) {
+        string repoPrefix = user + '/' + repo;
+        string gitUrl = gitPrefix + repoPrefix + ".git";
+        repo_pairs.insert({gitUrl, user_path + "/" + repo});
+      }
     }
+    repoPaths.insert({keyword, repo_pairs});
   }
+}
+int RepoManager::CloneRepo(const string& url, const string& path) {
+  git_clone_options opt;
+  git_clone_init_options(&opt, GIT_CLONE_OPTIONS_VERSION);
+  opt.bare = 0;
+  git_repository* repo = NULL;
+  std::cout << "Downloading " << url << "\n";
+  int error = git_clone(&repo, url.c_str(), path.c_str(), &opt);
+  if (error) std::cerr << git_error_last()->message << "\n";
+  return error;
 }
 RepoManager::RepoManager(string dir) {
   if (*(dir.end() - 1) == '/') dir.erase(dir.end() - 1, dir.end());
@@ -60,21 +84,16 @@ RepoURLs RepoManager::FetchRepoUrls(string keyword) {
   return urls;
 }
 
-void RepoManager::DownloadRepos(RepoURLs urls) {
+void RepoManager::DownloadRepos(RepoURLs urls, const string& keyword) {
+  const bool keyword_used = IsKeywordUsed(keyword);
+  if (!keyword_used) repoPaths.insert({keyword, {}});
+  auto& current_key_set = repoPaths[keyword];
   for (auto& url : urls) {
     string gitName = ParseGitNameFromStr(url);
-    string path = repoDir + "/" + gitName;
-    const bool downloaded = repoPaths.find({url, path}) != repoPaths.end();
-    if (downloaded) continue;
-    git_clone_options opt;
-    git_clone_init_options(&opt, GIT_CLONE_OPTIONS_VERSION);
-    opt.bare = 0;
-    git_repository* repo = NULL;
-    std::cout << "Downloading " << url << "\n";
-    int error = git_clone(&repo, url.c_str(), path.c_str(), &opt);
-    if (error)
-      std::cerr << git_error_last()->message << "\n";
-    else
-      repoPaths.insert({url, path});
+    string path = repoDir + "/" + keyword + "/" + gitName;
+    RepoPair new_pair{url, path};
+    if (keyword_used && IsPairDownloaded(new_pair, current_key_set)) continue;
+    int error = CloneRepo(url, path);
+    if (!error) current_key_set.insert(new_pair);
   }
 }

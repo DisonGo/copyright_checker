@@ -28,9 +28,11 @@ class RepoManager {
   int CloneRepo(const string& url, const string& path);
 
  public:
+  RepoManager();
   RepoManager(string dir);
   ~RepoManager();
   map<string, UniqueRepoPairs> repoPaths;
   RepoURLs FetchRepoUrls(string keyword);
   void DownloadRepos(RepoURLs urls, const string& keyword);
+  static string DefaultRepoPath();
 };

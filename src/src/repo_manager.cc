@@ -56,6 +56,13 @@ int RepoManager::CloneRepo(const string& url, const string& path) {
   if (error) std::cerr << git_error_last()->message << "\n";
   return error;
 }
+RepoManager::RepoManager() {
+  repoDir = DefaultRepoPath();
+  git_libgit2_init();
+  CheckRepoDir();
+  cli.set_bearer_token_auth(token);
+  cli.enable_server_certificate_verification(false);
+}
 RepoManager::RepoManager(string dir) {
   if (*(dir.end() - 1) == '/') dir.erase(dir.end() - 1, dir.end());
   repoDir = dir;
@@ -96,4 +103,9 @@ void RepoManager::DownloadRepos(RepoURLs urls, const string& keyword) {
     int error = CloneRepo(url, path);
     if (!error) current_key_set.insert(new_pair);
   }
+}
+
+string RepoManager::DefaultRepoPath() {
+  string username = getenv("USER");
+  return string("/Users/" + username + "/goinfre/repos");
 }

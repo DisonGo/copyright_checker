@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Second argument should be peer name.\n";
     return 0;
   }
-  RepoManager man(GetPath());
+  RepoManager man;
   std::string ProjectName = GetProjectName(argc, argv);
   RepoURLs urls = man.FetchRepoUrls(ProjectName);
   man.DownloadRepos(urls, ProjectName);
@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
   size_t line{};
   std::vector<AnalyzeInfo> data;
   FilePathArrays peer_paths = FileManager::FindSourcesC(
-      "/Users/evverenn/Desktop/Projects/C3_SimpleBashUtils-1");
+      "/Users/evverenn/Desktop/Projects/C6_s21_matrix-4");
   for (auto& path : man.repoPaths[ProjectName]) {
     FilePathArrays paths = FileManager::FindSourcesC(path.second);
     for (auto& filepath : paths.second) {
@@ -90,9 +90,4 @@ std::string GetProjectName(int argc, char* argv[]) {
   std::cin >> answer;
   if (answer != "y") exit(0);
   return argv[1];
-}
-
-std::string GetPath() {
-  std::string username = getenv("USER");
-  return std::string("/Users/" + username + "/goinfre/repos");
 }

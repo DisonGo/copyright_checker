@@ -3,6 +3,7 @@
 *.dll
 *.DS_Store
 main.app
+src/main
 .vscode
 *.dSYM
 output.ini

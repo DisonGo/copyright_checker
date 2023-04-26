@@ -26,7 +26,7 @@ struct pred
 {
     bool operator()(const AnalyzeInfo& first, const AnalyzeInfo& second)
     {
-        return first.signature_info < second.signature_info;
+        return first.signature_info > second.signature_info;
     }
 };
 

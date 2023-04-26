@@ -20,8 +20,24 @@ string RepoManager::ParseGitNameFromStr(string str) {
   string gitName = userName + '/' + Name;
   return gitName;
 }
-RepoManager::RepoManager() {
+void RepoManager::CheckRepoDir() {
+  const string gitPrefix = "https://github.com/";
+  vector<string> users = FileManager::FindSubDirs(repoDir);
+  for (auto& user : users) {
+    vector<string> repos = FileManager::FindSubDirs(repoDir + user);
+
+    for (auto& repo : repos) {
+      string repoPrefix = user + '/' + repo;
+      string gitUrl = gitPrefix + repoPrefix + ".git";
+      repoPaths.insert({gitUrl, repoDir + repoPrefix});
+    }
+  }
+}
+RepoManager::RepoManager(string dir) {
+  if (*(dir.end() - 1) != '/') dir.append("/");
+  repoDir = dir;
   git_libgit2_init();
+  CheckRepoDir();
   cli.set_bearer_token_auth(token);
   cli.enable_server_certificate_verification(false);
 }
@@ -45,10 +61,10 @@ RepoURLs RepoManager::FetchRepoUrls(string keyword) {
   return urls;
 }
 
-void RepoManager::DownloadRepos(string dir, RepoURLs urls) {
+void RepoManager::DownloadRepos(RepoURLs urls) {
   for (auto& url : urls) {
     string gitName = ParseGitNameFromStr(url);
-    string path = dir + "/" + gitName;
+    string path = repoDir + "/" + gitName;
     git_clone_options opt;
     git_clone_init_options(&opt, GIT_CLONE_OPTIONS_VERSION);
     opt.bare = 0;

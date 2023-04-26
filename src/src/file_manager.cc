@@ -23,3 +23,10 @@ FilePathArrays FileManager::FindSourcesC(string path) {
   vector<string> sources = FindFilesByExtension(path, ".c");
   return FilePathArrays(headers, sources);
 }
+
+vector<string> FileManager::FindSubDirs(string path) {
+  vector<string> dirs;
+  for (auto &p : fs::directory_iterator(path))
+    if (p.is_directory()) dirs.push_back(p.path().filename());
+  return dirs;
+}

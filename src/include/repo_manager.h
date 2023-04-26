@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "file_manager.h"
 #include "httplib.hpp"
 using std::pair;
 using std::set;
@@ -16,12 +17,14 @@ class RepoManager {
   const string apiurl{"https://api.github.com"};
   const string searchRepoApiUrl{"/search/repositories"};
   httplib::Client cli{apiurl};
+  string repoDir;
   string ParseGitNameFromStr(string str);
+  void CheckRepoDir();
 
  public:
-  RepoManager();
+  RepoManager(string dir);
   ~RepoManager();
   set<pair<string, string>> repoPaths;
   RepoURLs FetchRepoUrls(string keyword);
-  void DownloadRepos(string dir, RepoURLs urls);
+  void DownloadRepos(RepoURLs urls);
 };

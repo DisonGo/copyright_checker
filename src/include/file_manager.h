@@ -14,4 +14,5 @@ class FileManager {
  public:
   static FilePathArrays FindSourcesCPP(string path);
   static FilePathArrays FindSourcesC(string path);
+  static vector<string> FindSubDirs(string path);
 };

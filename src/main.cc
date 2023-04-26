@@ -60,13 +60,14 @@ int main(int argc, char* argv[]) {
             signature = GetSignatureInfo(filepath, review_file);
             line = GetLineInfo(filepath, review_file);
             if (signature > 45 || line > 45) {
-                size_t counter = data.size() - 1;
-                data[counter].id = id++;
-                data[counter].git_path = path.first;
-                data[counter].signature_info = signature;
-                data[counter].line_info = line;
-                data[counter].file_path_ref = filepath;
-                data[counter].file_path_review = review_file;
+                AnalyzeInfo current;
+                current.id = id++;
+                current.git_path = path.first;
+                current.signature_info = signature;
+                current.line_info = line;
+                current.file_path_ref = filepath;
+                current.file_path_review = review_file;
+                data.push_back(current);
             }            
         }
     }

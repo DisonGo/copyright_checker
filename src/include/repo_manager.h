@@ -25,7 +25,9 @@ class RepoManager {
   bool IsKeywordUsed(const string& keyword);
   bool IsPairDownloaded(const RepoPair& pair, const UniqueRepoPairs& pair_set);
   void CheckRepoDir();
-  int CloneRepo(const string& url, const string& path);
+  static void CloneRepoThread(const string& url, const string& path,
+                              pair<RepoPair, int>& repo_pair);
+  static int CloneRepo(const string& url, const string& path);
 
  public:
   RepoManager();

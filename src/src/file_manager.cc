@@ -6,6 +6,11 @@
 namespace fs = std::filesystem;
 vector<string> FileManager::FindFilesByExtension(string path, string ext) {
   vector<string> files;
+  if (!fs::is_directory(path)) {
+    std::cerr << path << " is not a dir"
+              << "\n";
+    return files;
+  }
   for (auto &p : fs::recursive_directory_iterator(path))
     if (p.path().extension() == ext)
       files.push_back(fs::absolute(p.path()).string());

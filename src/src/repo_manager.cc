@@ -4,7 +4,8 @@
 #include "git2.h"
 #include "iostream"
 #include "json.hpp"
-
+#include "thread"
+using std::thread;
 using json = nlohmann::json;
 string RepoManager::ParseGitNameFromStr(string str) {
   size_t last_slash_pos = str.find_last_of('/');
@@ -45,6 +46,16 @@ void RepoManager::CheckRepoDir() {
     }
     repoPaths.insert({keyword, repo_pairs});
   }
+}
+void RepoManager::CloneRepoThread(const string& url, const string& path,
+                                  pair<RepoPair, int>& repo_pair) {
+  git_clone_options opt;
+  git_clone_init_options(&opt, GIT_CLONE_OPTIONS_VERSION);
+  opt.bare = 0;
+  git_repository* repo = NULL;
+  std::cout << "Downloading " << url << "\n";
+  repo_pair.second = git_clone(&repo, url.c_str(), path.c_str(), &opt);
+  if (repo_pair.second) std::cerr << git_error_last()->message << "\n";
 }
 int RepoManager::CloneRepo(const string& url, const string& path) {
   git_clone_options opt;
@@ -95,14 +106,20 @@ void RepoManager::DownloadRepos(RepoURLs urls, const string& keyword) {
   const bool keyword_used = IsKeywordUsed(keyword);
   if (!keyword_used) repoPaths.insert({keyword, {}});
   auto& current_key_set = repoPaths[keyword];
+  vector<thread> threads;
+  vector<pair<RepoPair, int>> errors(urls.size());
   for (auto& url : urls) {
     string gitName = ParseGitNameFromStr(url);
     string path = repoDir + "/" + keyword + "/" + gitName;
     RepoPair new_pair{url, path};
     if (keyword_used && IsPairDownloaded(new_pair, current_key_set)) continue;
-    int error = CloneRepo(url, path);
-    if (!error) current_key_set.insert(new_pair);
+    errors.push_back({new_pair, 0});
+    threads.push_back(thread(&RepoManager::CloneRepoThread, url, path,
+                             std::ref(errors[errors.size()])));
   }
+  for (auto& th : threads) th.join();
+  for (auto& error : errors)
+    if (!error.second) current_key_set.insert(error.first);
 }
 
 string RepoManager::DefaultRepoPath() {

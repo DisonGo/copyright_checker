@@ -24,17 +24,16 @@ void RepoManager::CheckRepoDir() {
   const string gitPrefix = "https://github.com/";
   vector<string> users = FileManager::FindSubDirs(repoDir);
   for (auto& user : users) {
-    vector<string> repos = FileManager::FindSubDirs(repoDir + user);
-
+    vector<string> repos = FileManager::FindSubDirs(repoDir + "/" + user);
     for (auto& repo : repos) {
       string repoPrefix = user + '/' + repo;
       string gitUrl = gitPrefix + repoPrefix + ".git";
-      repoPaths.insert({gitUrl, repoDir + repoPrefix});
+      repoPaths.insert({gitUrl, repoDir + "/" + repoPrefix});
     }
   }
 }
 RepoManager::RepoManager(string dir) {
-  if (*(dir.end() - 1) != '/') dir.append("/");
+  if (*(dir.end() - 1) == '/') dir.erase(dir.end() - 1, dir.end());
   repoDir = dir;
   git_libgit2_init();
   CheckRepoDir();
@@ -65,6 +64,8 @@ void RepoManager::DownloadRepos(RepoURLs urls) {
   for (auto& url : urls) {
     string gitName = ParseGitNameFromStr(url);
     string path = repoDir + "/" + gitName;
+    const bool downloaded = repoPaths.find({url, path}) != repoPaths.end();
+    if (downloaded) continue;
     git_clone_options opt;
     git_clone_init_options(&opt, GIT_CLONE_OPTIONS_VERSION);
     opt.bare = 0;

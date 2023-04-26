@@ -26,6 +26,10 @@ FilePathArrays FileManager::FindSourcesC(string path) {
 
 vector<string> FileManager::FindSubDirs(string path) {
   vector<string> dirs;
+  if (!fs::exists(path)) {
+    fs::create_directory(path);
+    return dirs;
+  }
   for (auto &p : fs::directory_iterator(path))
     if (p.is_directory()) dirs.push_back(p.path().filename());
   return dirs;

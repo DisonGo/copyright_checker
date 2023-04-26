@@ -5,3 +5,4 @@
 main.app
 .vscode
 *.dSYM
+output.ini

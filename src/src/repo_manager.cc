@@ -5,6 +5,9 @@
 #include "iostream"
 #include "json.hpp"
 #include "thread"
+// CreateCloningThread
+#define CCT(url, path, error_ref) \
+  std::thread(&RepoManager::CloneRepoThread, url, path, std::ref(error_ref))
 using std::thread;
 using json = nlohmann::json;
 string RepoManager::ParseGitNameFromStr(string str) {
@@ -108,14 +111,15 @@ void RepoManager::DownloadRepos(RepoURLs urls, const string& keyword) {
   auto& current_key_set = repoPaths[keyword];
   vector<thread> threads;
   vector<pair<RepoPair, int>> errors(urls.size());
+  for (auto& error : errors) error.second = -2;
   for (auto& url : urls) {
     string gitName = ParseGitNameFromStr(url);
     string path = repoDir + "/" + keyword + "/" + gitName;
     RepoPair new_pair{url, path};
     if (keyword_used && IsPairDownloaded(new_pair, current_key_set)) continue;
     errors.push_back({new_pair, 0});
-    threads.push_back(thread(&RepoManager::CloneRepoThread, url, path,
-                             std::ref(errors[errors.size()])));
+    auto& last_error = errors[errors.size() - 1];
+    threads.push_back(CCT(url, path, last_error));
   }
   for (auto& th : threads) th.join();
   for (auto& error : errors)

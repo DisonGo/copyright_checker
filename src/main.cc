@@ -1,49 +1,32 @@
+#define _DEBUG
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "file_manager.h"
-#include "line_check.h"
 #include "logger.h"
 #include "repo_manager.h"
-#include "signature_check.h"
+#include "flags.h"
+#include "analyze.h"
 
 using std::string;
 typedef std::vector<std::pair<std::vector<std::string>, string>> FilesData;
 
-string GetProjectName(int argc, char* argv[]);
+constexpr time_t TIMEOUT = 20;
+
+#ifdef _DEBUG
+void CloseAllThreads(std::pair<std::vector<std::thread>, RepoPair>& threads);
+#endif  //  _DEBUG
+
+bool IsConfirmProjectName(std::string project_name);
 string GetPath();
-
-struct AnalyzeInfo {
-  size_t id{};
-  string git_link;
-  size_t signature_info{};
-  size_t line_info{};
-  string file_path_ref;
-  string file_path_review;
-};
-
-void AnalyzeProject(const RepoPair& reference_path, FilesData& peer_files,
-    AnalyzeInfo& result, size_t id) {
-    size_t signature{};
-    size_t line{};
-    FilePathArrays paths = FileManager::FindSourcesC(reference_path.second);
-    for (auto& peer_file : peer_files) {
-      for (auto& reference_files : paths.second) {
-        signature = GetSignatureInfo(reference_files, peer_file.first);
-        line = GetLineInfo(reference_files, peer_file.first);
-        result.id = id;
-        result.git_link = reference_path.first;
-        result.signature_info = signature;
-        result.line_info = line;
-        result.file_path_ref = reference_files;
-        result.file_path_review = peer_file.second;
-      }
-    }
-}
-
+void FillPeerFilesData(FilePathArrays& paths, FilesData& filesdata);
+void CloseAllThreads(std::vector<std::thread>& threads);
+void GetResultConfig(string config_file, string peer_name, std::vector<std::vector<AnalyzeInfo>>& analyze_results);
 struct pred {
   bool operator()(const AnalyzeInfo& first, const AnalyzeInfo& second) {
     return first.signature_info > second.signature_info;
@@ -52,76 +35,127 @@ struct pred {
 
 int main(int argc, char* argv[]) {
 
-  if (argc < 4) {
-    std::cout << "First argument should be project name.\n";
-    std::cout << "Second argument should be peer name.\n";
-    std::cout << "Third argument should be a path to the peer project.\n";
-    return 0;
-  }
+  Flags flags(argc, argv);
+  if (flags.GetState() == false) return 1;
   RepoManager man(GetPath());
-  string ProjectName = GetProjectName(argc, argv);
-  RepoURLs urls = man.FetchRepoUrls(ProjectName);
-  man.DownloadRepos(urls, ProjectName);
-  std::cout << "Used repositories: " << man.repoPaths[ProjectName].size() << "\n";
+  if (!IsConfirmProjectName(flags.GetProjectName())) return 1;
+  RepoURLs urls = man.FetchRepoUrls(flags.GetProjectName());
+  man.DownloadRepos(urls, flags.GetProjectName());
+  std::cout << "Used repositories: " << man.repoPaths[flags.GetProjectName()].size() << "\n";
+
+  for (auto& var : man.repoPaths[flags.GetProjectName()]) {
+    std::cout << var.first << "\t" << var.second << "\n";
+  }
 
   size_t id{};
-  std::vector<AnalyzeInfo> analyze_result(100);
-  FilePathArrays peer_paths = FileManager::FindSourcesC(
-      argv[3]);
+  FilePathArrays peer_paths = FileManager::FindSourcesC(flags.GetProjectPath());
 
-  std::vector<std::thread> peer_files_thread;
 
   FilesData peer_files;
-  std::ifstream each_peer_file;
-  for (auto& file : peer_paths.second) {
-    each_peer_file.open(file);
-    if (!each_peer_file.is_open()) continue;
-    
-    string buffer;
-    std::vector<string> file_data;
-    while (std::getline(each_peer_file, buffer)) {
-      file_data.push_back(buffer);
-    }
+  FillPeerFilesData(peer_paths, peer_files);
+  
+  #ifdef _DEBUG
+    std::pair<std::vector<std::thread>, RepoPair> peer_files_thread;
+  #else
+    std::vector<std::thread> peer_files_thread;
+  #endif  //  _DEBUG
 
-    peer_files.push_back({file_data, file});
-    each_peer_file.close();
+  std::vector<std::vector<AnalyzeInfo>> results(man.repoPaths[flags.GetProjectName()].size());
+  size_t index{};
+  for (auto& repo : man.repoPaths[flags.GetProjectName()]) {
+      peer_files_thread.first.push_back(std::thread(&Analyze::AnalyzeProject, repo, std::ref(peer_files), std::ref(results[index++]), id++));
+      peer_files_thread.second = repo;
   }
 
-
-  for (auto& repo : man.repoPaths[ProjectName]) {
-      analyze_result.push_back({});
-      peer_files_thread.push_back(std::thread(&AnalyzeProject, repo, std::ref(peer_files), std::ref(*(analyze_result.end() - 1)),
-      id++));
-  }
-
-  size_t counter = 1;
-  for (auto& thread : peer_files_thread) {
-      thread.join();
-      std::cout << "Project analyzed: " << counter++ << std::endl;
-  }
-
-
-  std::ofstream config_file("output.ini");
-  InitLog(config_file, argv[2]);
-  std::sort(analyze_result.begin(), analyze_result.end(), pred());
-  for (auto& element : analyze_result) {
-    WriteResult(config_file, element.id, element.git_link,
-                element.signature_info, element.line_info,
-                element.file_path_ref, element.file_path_review);
-  }
-
+  CloseAllThreads(peer_files_thread);
+  GetResultConfig("output.txt", flags.GetPeerName(), results);
 
   return 0;
 }
 
+void GetResultConfig(string config_file, string peer_name, std::vector<std::vector<AnalyzeInfo>>& analyze_results) {
+  std::ofstream config(config_file);
+  InitLog(config, peer_name);
 
-string GetProjectName(int argc, char* argv[]) {
-  if (argc < 2) exit(0);
-  std::cout << "Project name = " << argv[1] << "\nConfirm?: ";
+  std::vector<AnalyzeInfo> results;
+  for (auto& result_array : analyze_results) {
+    results.insert(results.end(), result_array.begin(), result_array.end());
+  }
+
+  std::sort(results.begin(), results.end(), pred());
+  for (auto& element : results) {
+    WriteResult(config, element.id, element.git_link,
+                element.signature_info, element.line_info,
+                element.file_path_ref, element.file_path_review);
+  }
+}
+
+void FillPeerFilesData(FilePathArrays& paths, FilesData& filesdata) {
+  std::ifstream each_peer_file;
+  for (auto& file : paths.second) {
+    each_peer_file.open(file);
+    if (!each_peer_file.is_open()) continue;
+  
+    string buffer;
+    std::vector<string> file_data;
+    while (std::getline(each_peer_file, buffer))
+      file_data.push_back(buffer);
+
+    filesdata.push_back({file_data, file});
+    each_peer_file.close();
+  }
+}
+
+void CloseAllThreads(std::vector<std::thread>& threads) {
+  std::time_t join_start = std::time(nullptr);
+  std::time_t join_end;
+
+  size_t thread_size = threads.size();
+  while (thread_size > 0) {
+    for (size_t i = 0; i < threads.size(); i++) {
+      if (threads[i].joinable()) {
+        threads[i].join();
+        std::cout << "thread id: " << (i + 1) << " finished!\n";
+        thread_size--;
+        join_start = std::time(nullptr);
+      } else {
+        join_end = std::time(nullptr);
+        if (join_end - join_start > TIMEOUT) {
+          threads[i].detach();
+          thread_size--;
+        }
+        std::cout << "thread id: " << (i + 1) << " DETACHED!\n";
+      }
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+}
+
+#ifdef _DEBUG
+void CloseAllThreads(std::pair<std::vector<std::thread>, RepoPair>& threads) {
+  for (size_t i = 0; i < threads.first.size(); i++) {
+    if (i == 2 || i == 11) {
+      std::cout << "Detached thread is " << i << "\n";
+      std::cout << "Project is " << threads.second.first << "\n";
+      threads.first[i].detach();
+    }
+    if (threads.first[i].joinable()) {
+      std::cout << "Joined thread is " << i << "\n";
+      std::cout << "Project is " << threads.second.first << "\n";
+      threads.first[i].join();
+    }
+  }
+}
+#endif  //  _DEBUG
+
+
+bool IsConfirmProjectName(std::string project_name) {
+  std::cout << "Project name = " << project_name << "\nConfirm?: ";
   string answer;
   std::cin >> answer;
-  if (answer != "y") exit(0);
-  return argv[1];
+  if (answer != "y") return false;
+  return true;
 }
 
 string GetPath() {

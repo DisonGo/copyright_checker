@@ -56,7 +56,6 @@ void RepoManager::CloneRepoThread(const string& url, const string& path,
   git_clone_init_options(&opt, GIT_CLONE_OPTIONS_VERSION);
   opt.bare = 0;
   git_repository* repo = NULL;
-  std::cout << "Downloading " << url << "\n";
   repo_pair.second = git_clone(&repo, url.c_str(), path.c_str(), &opt);
   if (repo_pair.second) std::cerr << git_error_last()->message << "\n";
 }
@@ -65,7 +64,6 @@ int RepoManager::CloneRepo(const string& url, const string& path) {
   git_clone_init_options(&opt, GIT_CLONE_OPTIONS_VERSION);
   opt.bare = 0;
   git_repository* repo = NULL;
-  std::cout << "Downloading " << url << "\n";
   int error = git_clone(&repo, url.c_str(), path.c_str(), &opt);
   if (error) std::cerr << git_error_last()->message << "\n";
   return error;

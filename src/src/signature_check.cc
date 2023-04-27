@@ -1,22 +1,21 @@
 #include "signature_check.h"
 
-int GetSignatureInfo(const std::string& reference_file, const std::string& checked_file) {
-  if (reference_file.empty() && checked_file.empty()) return 1;
+int GetSignatureInfo(const std::string& reference_file, std::vector<std::string> checked_file) {
+  if (reference_file.empty()) return 1;
   std::ifstream ref(reference_file);
-  std::ifstream checked(checked_file);
 
-  if (!ref.is_open() || !checked.is_open()) {
-    std::cout << "Reference or checked file is not exist.\n";
+  if (!ref.is_open()) {
+    std::cout << "Reference file is not exist.\n";
     return 0;
   }
 
   std::vector<std::string> reference = SignatureNormalize(ref);
-  std::vector<std::string> check = SignatureNormalize(checked);
+  SignatureNormalize(checked_file);
   RemoveVariables(reference);
-  RemoveVariables(check);
+  RemoveVariables(checked_file);
 
-  if (reference.size() == 0 || check.size() == 0) return 0;
-  return static_cast<int>(GetMatchedPercentage(reference, check));
+  if (reference.size() == 0 || checked_file.size() == 0) return 0;
+  return static_cast<int>(GetMatchedPercentage(reference, checked_file));
 }
 
 double GetMatchedPercentage(std::vector<std::string>& ref,
@@ -47,6 +46,11 @@ std::vector<std::string> SignatureNormalize(std::ifstream& input_file) {
     strings.push_back(buffer);
   }
   return strings;
+}
+
+void SignatureNormalize(std::vector<std::string>& input_string) {
+  for (auto& line : input_string)
+    RemoveExtra(line);
 }
 
 void RemoveExtra(std::string& str) {

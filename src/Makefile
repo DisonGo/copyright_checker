@@ -15,7 +15,7 @@ REPORT_FILES	= $(shell find . -name '*.gcno') $(shell find . -name '*.gcda')
 INC				:= $(shell find $(LIB_INC_DIR) -name '*.h')
 LIB_OBJ 		= $(patsubst %.cc,$(ODIR)/%.o, $(LIB_SOURCES))
 SHARED_LIB_INCLUDE = ./include
-SHARED_LIB_BIN = /Users/evverenn/Desktop/Projects/Junk/Eye_of_Verter/src/lib
+SHARED_LIB_BIN = ./lib
 ifeq ($(UNAME_S),Linux)
 	gcc += -D OS_LINUX
 	TEST_CHECK_F= -lcheck

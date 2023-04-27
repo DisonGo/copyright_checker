@@ -10,17 +10,39 @@
 #include "repo_manager.h"
 #include "signature_check.h"
 
-std::string GetProjectName(int argc, char* argv[]);
-std::string GetPath();
+using std::string;
+typedef std::vector<std::pair<std::vector<std::string>, string>> FilesData;
+
+string GetProjectName(int argc, char* argv[]);
+string GetPath();
 
 struct AnalyzeInfo {
   size_t id{};
-  std::string git_path;
+  string git_link;
   size_t signature_info{};
   size_t line_info{};
-  std::string file_path_ref;
-  std::string file_path_review;
+  string file_path_ref;
+  string file_path_review;
 };
+
+void AnalyzeProject(const RepoPair& reference_path, FilesData& peer_files,
+    AnalyzeInfo& result, size_t id) {
+    size_t signature{};
+    size_t line{};
+    FilePathArrays paths = FileManager::FindSourcesC(reference_path.second);
+    for (auto& peer_file : peer_files) {
+      for (auto& reference_files : paths.second) {
+        signature = GetSignatureInfo(reference_files, peer_file.first);
+        line = GetLineInfo(reference_files, peer_file.first);
+        result.id = id;
+        result.git_link = reference_path.first;
+        result.signature_info = signature;
+        result.line_info = line;
+        result.file_path_ref = reference_files;
+        result.file_path_review = peer_file.second;
+      }
+    }
+}
 
 struct pred {
   bool operator()(const AnalyzeInfo& first, const AnalyzeInfo& second) {
@@ -29,65 +51,80 @@ struct pred {
 };
 
 int main(int argc, char* argv[]) {
-  if (argc < 3) {
+
+  if (argc < 4) {
     std::cout << "First argument should be project name.\n";
     std::cout << "Second argument should be peer name.\n";
+    std::cout << "Third argument should be a path to the peer project.\n";
     return 0;
   }
-  RepoManager man;
-  std::string ProjectName = GetProjectName(argc, argv);
+  RepoManager man(GetPath());
+  string ProjectName = GetProjectName(argc, argv);
   RepoURLs urls = man.FetchRepoUrls(ProjectName);
   man.DownloadRepos(urls, ProjectName);
-  std::cout << "\nDownloaded repositories:\n";
-
-  for (auto& repo : man.repoPaths[ProjectName]) {
-    std::cout << repo.first << "\t" << repo.second << "\n";
-  }
+  std::cout << "Used repositories: " << man.repoPaths[ProjectName].size() << "\n";
 
   size_t id{};
-  size_t signature{};
-  size_t line{};
-  std::vector<AnalyzeInfo> data;
+  std::vector<AnalyzeInfo> analyze_result(100);
   FilePathArrays peer_paths = FileManager::FindSourcesC(
-      "/Users/evverenn/Desktop/Projects/C6_s21_matrix-4");
-  for (auto& path : man.repoPaths[ProjectName]) {
-    FilePathArrays paths = FileManager::FindSourcesC(path.second);
-    for (auto& filepath : paths.second) {
-      for (auto& review_file : peer_paths.second) {
-        signature = GetSignatureInfo(filepath, review_file);
-        line = GetLineInfo(filepath, review_file);
-        if (signature > 45 || line > 45) {
-          AnalyzeInfo current;
-          current.id = id++;
-          current.git_path = path.first;
-          current.signature_info = signature;
-          current.line_info = line;
-          current.file_path_ref = filepath;
-          current.file_path_review = review_file;
-          data.push_back(current);
-        }
-      }
+      argv[3]);
+
+  std::vector<std::thread> peer_files_thread;
+
+  FilesData peer_files;
+  std::ifstream each_peer_file;
+  for (auto& file : peer_paths.second) {
+    each_peer_file.open(file);
+    if (!each_peer_file.is_open()) continue;
+    
+    string buffer;
+    std::vector<string> file_data;
+    while (std::getline(each_peer_file, buffer)) {
+      file_data.push_back(buffer);
     }
+
+    peer_files.push_back({file_data, file});
+    each_peer_file.close();
   }
+
+
+  for (auto& repo : man.repoPaths[ProjectName]) {
+      analyze_result.push_back({});
+      peer_files_thread.push_back(std::thread(&AnalyzeProject, repo, std::ref(peer_files), std::ref(*(analyze_result.end() - 1)),
+      id++));
+  }
+
+  size_t counter = 1;
+  for (auto& thread : peer_files_thread) {
+      thread.join();
+      std::cout << "Project analyzed: " << counter++ << std::endl;
+  }
+
 
   std::ofstream config_file("output.ini");
   InitLog(config_file, argv[2]);
-
-  std::sort(data.begin(), data.end(), pred());
-  for (auto& element : data) {
-    WriteResult(config_file, element.id, element.git_path,
+  std::sort(analyze_result.begin(), analyze_result.end(), pred());
+  for (auto& element : analyze_result) {
+    WriteResult(config_file, element.id, element.git_link,
                 element.signature_info, element.line_info,
                 element.file_path_ref, element.file_path_review);
   }
 
+
   return 0;
 }
 
-std::string GetProjectName(int argc, char* argv[]) {
+
+string GetProjectName(int argc, char* argv[]) {
   if (argc < 2) exit(0);
   std::cout << "Project name = " << argv[1] << "\nConfirm?: ";
-  std::string answer;
+  string answer;
   std::cin >> answer;
   if (answer != "y") exit(0);
   return argv[1];
+}
+
+string GetPath() {
+  string username = getenv("USER");
+  return string("/Users/" + username + "/goinfre/repos");
 }

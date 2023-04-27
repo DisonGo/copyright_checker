@@ -1,13 +1,12 @@
 #include "line_check.h"
 
 int GetLineInfo(const std::string& reference_file,
-                const std::string& checked_file) {
-  if (checked_file.empty() || reference_file.empty()) return 0;
+                const std::vector<std::string>& peer_file) {
+  if (reference_file.empty()) return 0;
 
   std::ifstream ref(reference_file);
-  std::ifstream checked(checked_file);
-  if (!ref.is_open() || !checked.is_open()) {
-    std::cout << "Reference or checked file is not exist.\n";
+  if (!ref.is_open()) {
+    std::cout << "Reference file does not exist.\n";
     return 0;
   }
 
@@ -22,9 +21,9 @@ int GetLineInfo(const std::string& reference_file,
     }
   }
   buffer.clear();
-  while (std::getline(checked, buffer)) {
-    if (buffer.size() > 0) {
-      buffer = NormalizeString(buffer);
+  for (auto& line : peer_file) {
+    if (line.size() > 0) {
+      buffer = NormalizeString(line);
       if (buffer.size() > 0) check.push_back(buffer);
     }
   }

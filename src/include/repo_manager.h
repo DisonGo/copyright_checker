@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "file_manager.h"
+#include "git2.h"
 #include "httplib.hpp"
 using std::map;
 using std::pair;
@@ -16,6 +17,14 @@ typedef pair<string, string> RepoPair;
 typedef set<RepoPair> UniqueRepoPairs;
 class RepoManager {
  private:
+  struct git_clone_pair {
+    git_clone_options opt{};
+    git_repository* repo = NULL;
+    git_clone_pair() {
+      git_clone_init_options(&opt, GIT_CLONE_OPTIONS_VERSION);
+      opt.bare = 0;
+    }
+  };
   const string token{"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"};
   const string apiurl{"https://api.github.com"};
   const string searchRepoApiUrl{"/search/repositories"};

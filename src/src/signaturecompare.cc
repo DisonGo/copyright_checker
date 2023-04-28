@@ -1,16 +1,9 @@
 #include "signaturecompare.h"
-
 int SignatureCompare::GetSignatureInfo(const string& reference_file,
-                                       vector<string> checked_file) {
+                                       FileData checked_file) {
   if (reference_file.empty()) return 1;
-  std::ifstream ref(reference_file);
-
-  if (!ref.is_open()) {
-    std::cout << "Reference file is not exist.\n";
-    return 0;
-  }
-
-  vector<string> reference = SignatureNormalize(ref);
+  FileData reference = std::move(FileManager::ReadFileContent(reference_file));
+  SignatureNormalize(reference);
   SignatureNormalize(checked_file);
   RemoveVariables(reference);
   RemoveVariables(checked_file);
@@ -19,8 +12,7 @@ int SignatureCompare::GetSignatureInfo(const string& reference_file,
   return static_cast<int>(GetMatchedPercentage(reference, checked_file));
 }
 
-double SignatureCompare::GetMatchedPercentage(vector<string>& ref,
-                                              vector<string>& copy) {
+double SignatureCompare::GetMatchedPercentage(FileData& ref, FileData& copy) {
   size_t all_count{};
   size_t match_count{};
   for (size_t i = 0; i < ref.size(); i++) {
@@ -38,22 +30,16 @@ double SignatureCompare::GetMatchedPercentage(vector<string>& ref,
   return (100.0 / all_count * match_count);
 }
 
-vector<string> SignatureCompare::SignatureNormalize(std::ifstream& input_file) {
-  vector<string> strings;
-
-  string buffer;
-  while (std::getline(input_file, buffer)) {
-    RemoveExtra(buffer);
-    strings.push_back(buffer);
-  }
+FileData SignatureCompare::SignatureNormalize(std::ifstream& path) {
+  FileData strings = std::move(FileManager::ReadFileContent(path, RemoveExtra));
   return strings;
 }
 
-void SignatureCompare::SignatureNormalize(vector<string>& input_string) {
-  for (auto& line : input_string) RemoveExtra(line);
+void SignatureCompare::SignatureNormalize(FileData& data) {
+  data = std::move(FileManager::TransformFileData(data, RemoveExtra));
 }
 
-void SignatureCompare::RemoveExtra(string& str) {
+string SignatureCompare::RemoveExtra(const string& str) {
   string result_string;
 
   for (size_t i = 0; i < str.size(); i++) {
@@ -66,8 +52,7 @@ void SignatureCompare::RemoveExtra(string& str) {
   }
 
   RemoveQuotes(result_string);
-
-  str = result_string;
+  return result_string;
 }
 
 void SignatureCompare::RemoveQuotes(string& str) {
@@ -77,8 +62,8 @@ void SignatureCompare::RemoveQuotes(string& str) {
   while (res != str.size() && str[res] != '"') str.erase(res, 1);
 }
 
-void SignatureCompare::RemoveVariables(vector<string>& strings) {
-  vector<string> var_types = {
+void SignatureCompare::RemoveVariables(FileData& strings) {
+  static const vector<string> var_types = {
       "int*",         "float*",        "char*",
       "double*",      "int",           "char",
       "float",        "double",        "void",
@@ -122,7 +107,7 @@ inline bool SignatureCompare::IsEndOfName(const char& current) {
 }
 
 void SignatureCompare::RemoveVariableFromString(
-    vector<string>& str, vector<string>& variable_names) {
+    FileData& str, vector<string>& variable_names) {
   size_t find_iterator{};
   for (size_t i = 0; i < str.size(); i++) {
     for (size_t j = 0; j < variable_names.size(); j++) {

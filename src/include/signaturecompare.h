@@ -1,8 +1,9 @@
 #pragma once
-
 #include <fstream>
 #include <iostream>
 #include <vector>
+
+#include "file_manager.h"
 using std::string;
 using std::vector;
 class SignatureCompare {
@@ -13,16 +14,15 @@ class SignatureCompare {
   ~SignatureCompare() {}
 
  private:
-  int GetSignatureInfo(const string& reference_file,
-                       vector<string> checked_file);
-  double GetMatchedPercentage(vector<string>& ref, vector<string>& copy);
-  vector<string> SignatureNormalize(std::ifstream& input_file);
-  void RemoveExtra(string& str);
-  void SignatureNormalize(vector<string>& input_string);
-  void RemoveQuotes(string& str);
-  void RemoveVariables(vector<string>& strings);
-  void ReadVariableName(string& from, string& buffer, size_t& pos);
-  inline bool IsEndOfName(const char& current);
-  void RemoveVariableFromString(vector<string>& str,
-                                vector<string>& variable_names);
+  int GetSignatureInfo(const string& reference_file, FileData checked_file);
+  double GetMatchedPercentage(FileData& ref, FileData& copy);
+  static FileData SignatureNormalize(std::ifstream& path);
+  static string RemoveExtra(const string& str);
+  static void SignatureNormalize(FileData& data);
+  static void RemoveQuotes(string& str);
+  static void RemoveVariables(FileData& strings);
+  static void ReadVariableName(string& from, string& buffer, size_t& pos);
+  static inline bool IsEndOfName(const char& current);
+  static void RemoveVariableFromString(FileData& str,
+                                       vector<string>& variable_names);
 };

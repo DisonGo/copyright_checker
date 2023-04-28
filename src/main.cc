@@ -1,4 +1,4 @@
-#define _DEBUG
+// #define _DEBUG
 
 #include <algorithm>
 #include <fstream>
@@ -16,18 +16,16 @@
 using std::string;
 typedef std::vector<std::pair<std::vector<std::string>, string>> FilesData;
 
-constexpr time_t TIMEOUT = 20;
-
 #ifdef _DEBUG
 void CloseAllThreads(std::pair<std::vector<std::thread>, std::vector<std::string>>& threads);
 #endif  //  _DEBUG
 
-bool IsConfirmProjectName(std::string project_name);
+bool IsConfirmProject(Flags& flags);
 string GetPath();
 void FillPeerFilesData(FilePathArrays& paths, FilesData& filesdata);
 void CloseAllThreads(std::vector<std::thread>& threads);
 void GetResultConfig(string config_file, string peer_name, std::vector<std::vector<AnalyzeInfo>>& analyze_results);
-string ShowCreators() { return "@DisonGo && @simphoniia";}
+string ShowCreators() { return "@DisonGo && @simphoniia"; }
 struct pred {
   bool operator()(const AnalyzeInfo& first, const AnalyzeInfo& second) {
     return first.signature_info > second.signature_info;
@@ -40,7 +38,7 @@ int main(int argc, char* argv[]) {
   if (flags.GetState() == false) return 1;
   std::cout << ShowCreators() << "\n";
   RepoManager man(GetPath());
-  if (!IsConfirmProjectName(flags.GetProjectName())) return 1;
+  if (!IsConfirmProject(flags)) return 1;
   RepoURLs urls = man.FetchRepoUrls(flags.GetProjectName());
   man.DownloadRepos(urls, flags.GetProjectName());
   std::cout << "Used repositories: " << man.repoPaths[flags.GetProjectName()].size() << "\n";
@@ -65,8 +63,12 @@ int main(int argc, char* argv[]) {
   std::vector<std::vector<AnalyzeInfo>> results(man.repoPaths[flags.GetProjectName()].size());
   size_t index{};
   for (auto& repo : man.repoPaths[flags.GetProjectName()]) {
-      peer_files_thread.first.push_back(std::thread(&Analyze::AnalyzeProject, repo, std::ref(peer_files), std::ref(results[index++]), id++));
-      peer_files_thread.second.push_back(repo.first);
+      #ifdef _DEBUG
+        peer_files_thread.first.push_back(std::thread(&Analyze::AnalyzeProject, repo, std::ref(peer_files), std::ref(results[index++]), id++));
+        peer_files_thread.second.push_back(repo.first);
+      #else
+          peer_files_thread.push_back(std::thread(&Analyze::AnalyzeProject, repo, std::ref(peer_files), std::ref(results[index++]), id++));
+      #endif  //  _DEBUG
   }
 
   CloseAllThreads(peer_files_thread);
@@ -109,49 +111,36 @@ void FillPeerFilesData(FilePathArrays& paths, FilesData& filesdata) {
 }
 
 void CloseAllThreads(std::vector<std::thread>& threads) {
-  std::time_t join_start = std::time(nullptr);
-  std::time_t join_end;
-
-  size_t thread_size = threads.size();
-  while (thread_size > 0) {
-    for (size_t i = 0; i < threads.size(); i++) {
-      if (threads[i].joinable()) {
-        threads[i].join();
-        std::cout << "thread id: " << (i + 1) << " finished!\n";
-        thread_size--;
-        join_start = std::time(nullptr);
-      } else {
-        join_end = std::time(nullptr);
-        if (join_end - join_start > TIMEOUT) {
-          threads[i].detach();
-          thread_size--;
-        }
-        std::cout << "thread id: " << (i + 1) << " DETACHED!\n";
-      }
-    }
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  size_t threads_count = threads.size();
+  while (threads_count) {
+   for (size_t i = 0; i < threads.size(); i++) {
+     if (threads[i].joinable()) {
+       threads[i].join();
+       threads_count--;
+       std::cout << "Threads left: " << threads_count << "\n";
+     }
+   }
   }
 }
 
 #ifdef _DEBUG
 void CloseAllThreads(std::pair<std::vector<std::thread>, std::vector<std::string>>& threads) {
-
   for (size_t i = 0; i < threads.first.size(); i++) {
       std::cout << "Thread id: " << i << " joining: " << threads.second[i] << "\n";
       threads.first[i].join();
       std::cout << "Next repository is " << threads.second[i + 1] << "\n";
   }
-
 }
 #endif  //  _DEBUG
 
-
-bool IsConfirmProjectName(std::string project_name) {
-  std::cout << "Project name = " << project_name << "\nConfirm?: ";
+bool IsConfirmProject(Flags& flags) {
+  std::cout << "Project name = " << flags.GetProjectName() << "\n";
+  std::cout << "Peer name = " << flags.GetPeerName() << "\n";
+  std::cout << "Path to the peer project = " << flags.GetProjectPath() << "\n";
+  std::cout << "Confirm?: ";
   string answer;
   std::cin >> answer;
-  if (answer != "y") return false;
+  if (answer != "y" && answer != "yes") return false;
   return true;
 }
 

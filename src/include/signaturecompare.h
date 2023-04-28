@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 
+#define NO_MATCH std::string::npos
+
 class SignatureCompare {
   friend class Analyze;
 
@@ -12,6 +14,9 @@ class SignatureCompare {
   ~SignatureCompare() {}
 
  private:
+
+  bool IsCommentary{};
+
   int GetSignatureInfo(const std::string& reference_file,
                        std::vector<std::string> checked_file);
   double GetMatchedPercentage(std::vector<std::string>& ref,
@@ -88,6 +93,13 @@ void SignatureCompare::SignatureNormalize(
 
 void SignatureCompare::RemoveExtra(std::string& str) {
   std::string result_string;
+
+//   size_t commentary_iterator{};
+//   commentary_iterator = str.find("/*", 0);
+//   if (commentary_iterator != NO_MATCH) {
+//       str.erase()
+//   }
+
 
   for (size_t i = 0; i < str.size(); i++) {
     if (str[i] != ' ')

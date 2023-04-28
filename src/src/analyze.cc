@@ -7,7 +7,7 @@ void Analyze::AnalyzeProject(const RepoPair& reference_path,
   size_t line{};
   FilePathArrays paths = FileManager::FindSourcesC(reference_path.second);
   for (auto& peer_file : peer_files) {
-    for (auto& reference_files : paths.second) {
+    for (auto& reference_files : paths.sources) {
       signature = GetSignatureCompareInfo(reference_files, peer_file.first);
       line = GetLineCompareInfo(reference_files, peer_file.first);
       AnalyzeInfo current;

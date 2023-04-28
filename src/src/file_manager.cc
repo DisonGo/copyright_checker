@@ -18,14 +18,14 @@ vector<string> FileManager::FindFilesByExtension(const string& path,
 }
 
 FilePathArrays FileManager::FindSourcesCPP(const string& path) {
-  vector<string> headers = std::move(FindFilesByExtension(path, ".h"));
-  vector<string> sources = std::move(FindFilesByExtension(path, ".cc"));
+  vector<string> headers = FindFilesByExtension(path, ".h");
+  vector<string> sources = FindFilesByExtension(path, ".cc");
   return FilePathArrays(headers, sources);
 }
 
 FilePathArrays FileManager::FindSourcesC(const string& path) {
-  vector<string> headers = std::move(FindFilesByExtension(path, ".h"));
-  vector<string> sources = std::move(FindFilesByExtension(path, ".c"));
+  vector<string> headers = FindFilesByExtension(path, ".h");
+  vector<string> sources = FindFilesByExtension(path, ".c");
   return FilePathArrays(headers, sources);
 }
 
@@ -101,7 +101,11 @@ void FileManager::ReadPathArrayData(const PathArray& paths,
                                     FilesData& files_data) {
   for (auto& path : paths) {
     FileData data = std::move(FileManager::ReadFileContent(path));
-    if (!data.empty()) files_data.push_back({data, path});
+    if (!data.empty()) {
+      files_data.push_back({data, path});
+    } else {
+      std::cout << "Data is empty in:" << path << "\n";
+    }
   }
 }
 

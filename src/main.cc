@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
 
   FilesData peer_files;
   FillPeerFilesData(peer_paths, peer_files);
-
+  if (peer_files.empty()) std::cout << "Peer files is empty\n";
 #ifdef _DEBUG
   std::pair<std::vector<std::thread>, std::vector<std::string>>
       peer_files_thread;
@@ -65,12 +65,16 @@ int main(int argc, char* argv[]) {
       man.repoPaths[flags.GetProjectName()].size());
   size_t index{};
   for (auto& repo : man.repoPaths[flags.GetProjectName()]) {
-      #ifdef _DEBUG
-        peer_files_thread.first.push_back(std::thread(&Analyze::AnalyzeProject, repo, std::ref(peer_files), std::ref(results[index++]), id++));
-        peer_files_thread.second.push_back(repo.first);
-      #else
-          peer_files_thread.push_back(std::thread(&Analyze::AnalyzeProject, repo, std::ref(peer_files), std::ref(results[index++]), id++));
-      #endif  //  _DEBUG
+#ifdef _DEBUG
+    peer_files_thread.first.push_back(
+        std::thread(&Analyze::AnalyzeProject, repo, std::ref(peer_files),
+                    std::ref(results[index++]), id++));
+    peer_files_thread.second.push_back(repo.first);
+#else
+    peer_files_thread.push_back(std::thread(&Analyze::AnalyzeProject, repo,
+                                            std::ref(peer_files),
+                                            std::ref(results[index++]), id++));
+#endif  //  _DEBUG
   }
 
   CloseAllThreads(peer_files_thread);
@@ -104,18 +108,19 @@ void FillPeerFilesData(FilePathArrays& paths, FilesData& filesdata) {
 void CloseAllThreads(std::vector<std::thread>& threads) {
   size_t threads_count = threads.size();
   while (threads_count) {
-   for (size_t i = 0; i < threads.size(); i++) {
-     if (threads[i].joinable()) {
-       threads[i].join();
-       threads_count--;
-       std::cout << "Threads left: " << threads_count << "\n";
-     }
-   }
+    for (size_t i = 0; i < threads.size(); i++) {
+      if (threads[i].joinable()) {
+        threads[i].join();
+        threads_count--;
+        std::cout << "Threads left: " << threads_count << "\n";
+      }
+    }
   }
 }
 
 #ifdef _DEBUG
-void CloseAllThreads(std::pair<std::vector<std::thread>, std::vector<std::string>>& threads) {
+void CloseAllThreads(
+    std::pair<std::vector<std::thread>, std::vector<std::string>>& threads) {
   for (size_t i = 0; i < threads.first.size(); i++) {
     std::cout << "Thread id: " << i << " joining: " << threads.second[i]
               << "\n";

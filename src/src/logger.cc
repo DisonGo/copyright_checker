@@ -12,7 +12,9 @@ void InitLog(std::ofstream& log_file, std::string peer_name) {
 
 void WriteResult(std::ofstream& log_file, size_t id, std::string git_link,
                  int signature_percent, int line_percent, std::string file1, std::string file2) {
-  if (signature_percent < 50 && line_percent < 50) return;
+  #ifndef _DEBUG
+  if (signature_percent < 30 && line_percent < 30) return;
+  #endif  //  _DEBUG
   if (!log_file.is_open()) {
     std::cout << "File is not exist. . .";
     return;

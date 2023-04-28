@@ -4,6 +4,8 @@
 #include <vector>
 
 #include "file_manager.h"
+#define NO_MATCH std::string::npos
+
 using std::string;
 using std::vector;
 class SignatureCompare {
@@ -14,6 +16,7 @@ class SignatureCompare {
   ~SignatureCompare() {}
 
  private:
+  bool IsCommentary{};
   int GetSignatureInfo(const string& reference_file, FileData checked_file);
   double GetMatchedPercentage(FileData& ref, FileData& copy);
   static FileData SignatureNormalize(std::ifstream& path);

@@ -1,7 +1,6 @@
 
 #include "repo_manager.h"
 
-#include "git2.h"
 #include "iostream"
 #include "json.hpp"
 #include "thread"
@@ -52,19 +51,15 @@ void RepoManager::CheckRepoDir() {
 }
 void RepoManager::CloneRepoThread(const string& url, const string& path,
                                   pair<RepoPair, int>& repo_pair) {
-  git_clone_options opt;
-  git_clone_init_options(&opt, GIT_CLONE_OPTIONS_VERSION);
-  opt.bare = 0;
-  git_repository* repo = NULL;
-  repo_pair.second = git_clone(&repo, url.c_str(), path.c_str(), &opt);
+  git_clone_pair clone_pair;
+  repo_pair.second =
+      git_clone(&clone_pair.repo, url.c_str(), path.c_str(), &clone_pair.opt);
   if (repo_pair.second) std::cerr << git_error_last()->message << "\n";
 }
 int RepoManager::CloneRepo(const string& url, const string& path) {
-  git_clone_options opt;
-  git_clone_init_options(&opt, GIT_CLONE_OPTIONS_VERSION);
-  opt.bare = 0;
-  git_repository* repo = NULL;
-  int error = git_clone(&repo, url.c_str(), path.c_str(), &opt);
+  git_clone_pair clone_pair;
+  int error =
+      git_clone(&clone_pair.repo, url.c_str(), path.c_str(), &clone_pair.opt);
   if (error) std::cerr << git_error_last()->message << "\n";
   return error;
 }
@@ -86,17 +81,18 @@ RepoManager::RepoManager(string dir) {
 RepoManager::~RepoManager() { git_libgit2_shutdown(); }
 RepoURLs RepoManager::FetchRepoUrls(string keyword) {
   RepoURLs urls;
+  if (!cli.is_valid()) return urls;
   try {
-    if (cli.is_valid()) {
-      httplib::Params params = {{"q", keyword}};
-      httplib::Headers headers = {{"Accept", "application/vnd.github+json"}};
-      auto res = cli.Get("/search/repositories", params, headers);
-      json responseJSON = json::parse(res->body);
-      json items = responseJSON["items"];
-      for (auto& repo : items) {
-        urls.push_back(repo["clone_url"]);
-      }
-    }
+    httplib::Params params = {{"q", keyword}};
+    httplib::Headers headers = {{"Accept", "application/vnd.github+json"}};
+
+    auto res = cli.Get("/search/repositories", params, headers);
+
+    json responseJSON = json::parse(res->body);
+    json items = responseJSON["items"];
+
+    for (auto& repo : items) urls.push_back(repo["clone_url"]);
+
   } catch (const std::exception& e) {
     std::cout << "Response Error:" << e.what() << "\n";
   }
@@ -107,19 +103,28 @@ void RepoManager::DownloadRepos(RepoURLs urls, const string& keyword) {
   const bool keyword_used = IsKeywordUsed(keyword);
   if (!keyword_used) repoPaths.insert({keyword, {}});
   auto& current_key_set = repoPaths[keyword];
+
   vector<thread> threads;
   vector<pair<RepoPair, int>> errors(urls.size());
+
   for (auto& error : errors) error.second = -2;
+
   for (auto& url : urls) {
     string gitName = ParseGitNameFromStr(url);
     string path = repoDir + "/" + keyword + "/" + gitName;
+
     RepoPair new_pair{url, path};
+
     if (keyword_used && IsPairDownloaded(new_pair, current_key_set)) continue;
+
     errors.push_back({new_pair, 0});
     auto& last_error = errors[errors.size() - 1];
+
     threads.push_back(CCT(url, path, last_error));
   }
+
   for (auto& th : threads) th.join();
+
   for (auto& error : errors)
     if (!error.second) current_key_set.insert(error.first);
 }

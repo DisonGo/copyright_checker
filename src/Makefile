@@ -15,7 +15,7 @@ REPORT_FILES	= $(shell find . -name '*.gcno') $(shell find . -name '*.gcda')
 INC				:= $(shell find $(LIB_INC_DIR) -name '*.h')
 LIB_OBJ 		= $(patsubst %.cc,$(ODIR)/%.o, $(LIB_SOURCES))
 SHARED_LIB_INCLUDE = ./include
-SHARED_LIB_BIN = ./lib
+SHARED_LIB_BIN = /Users/evverenn/Desktop/Projects/Junk/Eye_of_Verter/src/lib
 ifeq ($(UNAME_S),Linux)
 	gcc += -D OS_LINUX
 	TEST_CHECK_F= -lcheck
@@ -83,6 +83,8 @@ gcov_report: clean set_report_gcc test
 	@genhtml -o report report.info
 	$(OPEN_CMD) ./report/index.html
 #-Wl,-rpath,${SHARED_LIB_BIN} 
-main: $(PROJECT_NAME).a main.cc
+main: $(PROJECT_NAME).a
+	$(gcc) -I${LIB_INC_DIR} $@.cc -o $@ -L./lib -l$(PROJECT_NAME) -lssl -lcrypto -Wl,-rpath,${SHARED_LIB_BIN} -lgit2
+test_main: $(PROJECT_NAME).a
 	$(gcc) -I${LIB_INC_DIR} $@.cc -o $@ -L./lib -l$(PROJECT_NAME) -lssl -lcrypto -Wl,-rpath,${SHARED_LIB_BIN} -lgit2
 .PHONY: clean obj clear $(PROJECT_NAME) test clang-replace all $(BUILD_DIR)/$(PROJECT_NAME).a set_debug_gcc set_report_gcc gcov_report

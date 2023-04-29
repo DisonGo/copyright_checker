@@ -15,6 +15,8 @@ class SignatureCompare {
   SignatureCompare() {}
   ~SignatureCompare() {}
 
+  static void RemoveVariables(FileData& strings);
+
  private:
   bool IsCommentary{};
   int GetSignatureInfo(const string& reference_file, FileData checked_file);
@@ -23,7 +25,6 @@ class SignatureCompare {
   static string RemoveExtra(const string& str);
   static void SignatureNormalize(FileData& data);
   static void RemoveQuotes(string& str);
-  static void RemoveVariables(FileData& strings);
   static void ReadVariableName(string& from, string& buffer, size_t& pos);
   static inline bool IsEndOfName(const char& current);
   static void RemoveVariableFromString(FileData& str,

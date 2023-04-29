@@ -116,8 +116,12 @@ void SignatureCompare::RemoveVariableFromFileData(
     FileData& data, const vector<string>& variable_names) {
   size_t find_iterator{};
 
-  for (auto& line : data)
-    for (auto& var_name : variable_names)
-      while ((find_iterator = line.find(var_name, 0)) != string::npos)
-        line.erase(find_iterator, var_name.size());
+  for (auto& line : data) {
+    for (auto& var_name : variable_names) {
+      while ((find_iterator = line.find(var_name, 0)) != string::npos) {
+        bool IsEndOfVar = !(std::isalpha(var_name[find_iterator + var_name.size()]));
+        if (IsEndOfVar) line.erase(find_iterator, var_name.size());
+      }
+    }
+  }
 }

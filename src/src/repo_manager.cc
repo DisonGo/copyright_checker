@@ -51,15 +51,13 @@ void RepoManager::CheckRepoDir() {
 }
 void RepoManager::CloneRepoThread(const string& url, const string& path,
                                   pair<RepoPair, int>& repo_pair) {
-  git_clone_pair clone_pair;
-  repo_pair.second =
-      git_clone(&clone_pair.repo, url.c_str(), path.c_str(), &clone_pair.opt);
+  git_clone_pair c_p;
+  repo_pair.second = git_clone(&c_p.repo, url.c_str(), path.c_str(), &c_p.opt);
   if (repo_pair.second) std::cerr << git_error_last()->message << "\n";
 }
 int RepoManager::CloneRepo(const string& url, const string& path) {
-  git_clone_pair clone_pair;
-  int error =
-      git_clone(&clone_pair.repo, url.c_str(), path.c_str(), &clone_pair.opt);
+  git_clone_pair c_p;
+  int error = git_clone(&c_p.repo, url.c_str(), path.c_str(), &c_p.opt);
   if (error) std::cerr << git_error_last()->message << "\n";
   return error;
 }

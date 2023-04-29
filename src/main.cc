@@ -33,18 +33,27 @@ struct pred {
   }
 };
 
-int main(int argc, char* argv[]) {
-  Flags flags(argc, argv);
+int main() {
+  vector<string> argv2 = {
+      "main",
+      "-project",
+      "s21_stringplus",
+      "-name",
+      "evverenn",
+      "-path",
+      "/Users/evverenn/Desktop/Projects/C2_s21_stringplus-1"};
+  Flags flags(argv2.size(), argv2);
   if (flags.GetState() == false) return 1;
   std::cout << ShowCreators() << "\n";
   RepoManager man(GetPath());
-  if (!IsConfirmProject(flags)) return 1;
-  RepoURLs urls = man.FetchRepoUrls(flags.GetProjectName());
-  man.DownloadRepos(urls, flags.GetProjectName());
-  std::cout << "Used repositories: "
-            << man.repoPaths[flags.GetProjectName()].size() << "\n";
+  // if (!IsConfirmProject(flags)) return 1;
+  string project_name = flags.GetProjectName();
+  RepoURLs urls = man.FetchRepoUrls(project_name);
+  man.DownloadRepos(urls, project_name);
+  std::cout << "Used repositories: " << man.repoPaths[project_name].size()
+            << "\n";
 
-  // for (auto& var : man.repoPaths[flags.GetProjectName()]) {
+  // for (auto& var : man.repoPaths[project_name]) {
   //   std::cout << var.first << "\t" << var.second << "\n";
   // }
 
@@ -62,9 +71,9 @@ int main(int argc, char* argv[]) {
 #endif  //  _DEBUG
 
   std::vector<std::vector<AnalyzeInfo>> results(
-      man.repoPaths[flags.GetProjectName()].size());
+      man.repoPaths[project_name].size());
   size_t index{};
-  for (auto& repo : man.repoPaths[flags.GetProjectName()]) {
+  for (auto& repo : man.repoPaths[project_name]) {
 #ifdef _DEBUG
     peer_files_thread.first.push_back(
         std::thread(&Analyze::AnalyzeProject, repo, std::ref(peer_files),

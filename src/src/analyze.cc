@@ -23,15 +23,9 @@ void Analyze::AnalyzeProject(const RepoPair& reference_path,
 }
 size_t Analyze::GetLineCompareInfo(string reference_file,
                                    vector<string> peer_file_data) {
-  size_t result{};
-  LineCompare obj;
-  result = obj.GetLineInfo(reference_file, peer_file_data);
-  return result;
+  return LineCompare::GetLineInfo(reference_file, peer_file_data);
 }
 size_t Analyze::GetSignatureCompareInfo(string reference_file,
                                         vector<string> peer_file_data) {
-  size_t result{};
-  SignatureCompare obj;
-  result = obj.GetSignatureInfo(reference_file, peer_file_data);
-  return result;
+  return SignatureCompare::GetSignatureInfo(reference_file, peer_file_data);
 }

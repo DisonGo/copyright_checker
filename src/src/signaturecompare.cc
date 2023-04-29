@@ -2,7 +2,7 @@
 int SignatureCompare::GetSignatureInfo(const string& reference_file,
                                        FileData checked_file) {
   if (reference_file.empty()) return 1;
-  FileData reference = std::move(FileManager::ReadFileContent(reference_file));
+  FileData reference = FileManager::ReadFileContent(reference_file);
   SignatureNormalize(reference);
   SignatureNormalize(checked_file);
   RemoveVariables(reference);
@@ -31,8 +31,7 @@ double SignatureCompare::GetMatchedPercentage(FileData& ref, FileData& copy) {
 }
 
 FileData SignatureCompare::SignatureNormalize(std::ifstream& path) {
-  FileData strings = std::move(FileManager::ReadFileContent(path, RemoveExtra));
-  return strings;
+  return FileManager::ReadFileContent(path, RemoveExtra);
 }
 
 void SignatureCompare::SignatureNormalize(FileData& data) {
@@ -62,7 +61,7 @@ void SignatureCompare::RemoveQuotes(string& str) {
   while (res != str.size() && str[res] != '"') str.erase(res, 1);
 }
 
-void SignatureCompare::RemoveVariables(FileData& strings) {
+void SignatureCompare::RemoveVariables(FileData& data) {
   static const vector<string> var_types = {
       "int*",         "float*",        "char*",
       "double*",      "int",           "char",
@@ -76,21 +75,28 @@ void SignatureCompare::RemoveVariables(FileData& strings) {
 
   string buffer;
   size_t find_result{};
-  for (size_t i = 0; i < strings.size(); i++) {
-    for (size_t j = 0; j < var_types.size(); j++) {
-      find_result = strings[i].find(var_types[j], 0);
+  for (const auto& line : data) {
+    for (const auto& var_type : var_types) {
+      find_result = line.find(var_type, 0);
       if (find_result != string::npos) {
-        find_result += var_types[j].size() + 1;
-        ReadVariableName(strings[i], buffer, find_result);
+        find_result += var_type.size() + 1;
+        ReadVariableName(line, buffer, find_result);
         if (buffer.size()) variables.push_back(buffer);
       }
     }
   }
-  RemoveVariableFromString(strings, variables);
+  RemoveVariableFromFileData(data, variables);
 }
 
-void SignatureCompare::ReadVariableName(string& from, string& buffer,
+void SignatureCompare::ReadVariableName(const string& from, string& buffer,
                                         size_t& pos) {
+  // if (from[pos] == ')') return;
+  // buffer.clear();
+  // string::const_iterator it = from.begin() + pos;
+  // for (; it != from.end(); it++) {
+  //   if (IsEndOfName(*it)) break;
+  //   buffer.push_back(*it);
+  // }
   if (from[pos] == ')') return;
   size_t from_size = from.size();
   buffer.clear();
@@ -106,16 +112,12 @@ inline bool SignatureCompare::IsEndOfName(const char& current) {
   return filter.find(current) != string::npos;
 }
 
-void SignatureCompare::RemoveVariableFromString(
-    FileData& str, vector<string>& variable_names) {
+void SignatureCompare::RemoveVariableFromFileData(
+    FileData& data, const vector<string>& variable_names) {
   size_t find_iterator{};
-  for (size_t i = 0; i < str.size(); i++) {
-    for (size_t j = 0; j < variable_names.size(); j++) {
-      find_iterator = str[i].find(variable_names[j], 0);
-      if (find_iterator != string::npos) {
-        str[i].erase(find_iterator, variable_names[j].size());
-        j = 0;
-      }
-    }
-  }
+
+  for (auto& line : data)
+    for (auto& var_name : variable_names)
+      while ((find_iterator = line.find(var_name, 0)) != string::npos)
+        line.erase(find_iterator, var_name.size());
 }

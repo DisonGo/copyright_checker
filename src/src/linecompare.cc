@@ -2,9 +2,8 @@
 int LineCompare::GetLineInfo(const string& reference_file,
                              const FileData& peer_file) {
   if (reference_file.empty()) return 0;
-  FileData reference = std::move(FileManager::ReadFileContent(reference_file));
-  FileData check =
-      std::move(FileManager::TransformFileData(peer_file, NormalizeString));
+  FileData reference = FileManager::ReadFileContent(reference_file);
+  FileData check = FileManager::TransformFileData(peer_file, NormalizeString);
   if (reference.size() == 0 || check.size() == 0) return 0;
   return GetMatchPercentage(reference, check);
 }

@@ -14,8 +14,9 @@ class LineCompare {
   ~LineCompare() {}
 
  private:
-  int GetLineInfo(const string& reference_file, const FileData& peer_file);
-  int GetMatchPercentage(FileData& ref, FileData& check);
+  static int GetLineInfo(const string& reference_file,
+                         const FileData& peer_file);
+  static int GetMatchPercentage(FileData& ref, FileData& check);
   static string NormalizeString(const string& str);
   static inline bool IsForbidden(const char symbol);
   static inline bool IsPreProcessing(const string& str);

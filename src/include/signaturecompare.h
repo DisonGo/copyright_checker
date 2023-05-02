@@ -2,8 +2,13 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <set>
+#include <unordered_set>
+#include <stack>
 
 #include "file_manager.h"
+
+typedef std::unordered_set<std::string> UniqVarNames;
 
 using std::string;
 using std::vector;
@@ -23,10 +28,11 @@ class SignatureCompare {
   static double GetMatchedPercentage(FileData& ref, FileData& copy);
   static FileData SignatureNormalize(std::ifstream& path);
   static string RemoveExtra(const string& str);
+  static UniqVarNames GetTypedefNames(const std::vector<std::string>& lines);
   static void SignatureNormalize(FileData& data);
   static void RemoveQuotes(string& str);
   static void ReadVariableName(const string& from, string& buffer, size_t& pos);
   static inline bool IsEndOfName(const char& current);
-  static void RemoveVariableFromFileData(FileData& data,
-                                         const vector<string>& variable_names);
+  static void RemoveVariableFromFileData(FileData& data, const UniqVarNames& variable_names);
+  static inline string GetTypedefNameFromLine(const string& line);
 };

@@ -62,41 +62,98 @@ void SignatureCompare::RemoveQuotes(string& str) {
 }
 
 void SignatureCompare::RemoveVariables(FileData& data) {
-  static const vector<string> var_types = {
-      "int*",         "float*",        "char*",
-      "double*",      "int",           "char",
-      "float",        "double",        "void",
-      "enum",         "struct",        "size_t",
-      "short",        "long double",   "unsigned",
-      "unsigned int", "unsigned char", "unsigned long long",
-      "signed",       "signed int",    "signed char"};
+  static vector<string> var_types = {      "int*",
+                                           "float*",
+                                           "char*",
+                                           "double*",
+                                           "int",
+                                           "char",
+                                           "float",
+                                           "double",
+                                           "void",
+                                           "enum",
+                                           "struct",
+                                           "size_t",
+                                           "short",
+                                           "long double",
+                                           "unsigned int",
+                                           "unsigned char",
+                                           "unsigned long long",
+                                           "unsigned",
+                                           "signed int",
+                                           "signed char",
+                                           "signed"};
+  
 
-  vector<string> variables;
+  UniqVarNames variables;
+  UniqVarNames typedef_names = GetTypedefNames(data);
+  for (auto& var : typedef_names) {
+    variables.insert(var);
+    var_types.push_back(var);
+  }
 
-  string buffer;
   size_t find_result{};
+  string buffer;
   for (const auto& line : data) {
     for (const auto& var_type : var_types) {
-      find_result = line.find(var_type, 0);
-      if (find_result != string::npos) {
-        find_result += var_type.size() + 1;
-        ReadVariableName(line, buffer, find_result);
-        if (buffer.size()) variables.push_back(buffer);
+      find_result = 0;
+      while ((find_result = line.find(var_type, find_result)) != string::npos) {
+        if (!find_result || !(std::isalpha(line[find_result - 1]))) {
+          find_result += var_type.size() + 1;
+          ReadVariableName(line, buffer, find_result);
+          if (buffer.size())
+            variables.insert(buffer);
+        } else {
+          find_result += 1;
+        }
       }
     }
   }
+
+
+  std::cout << "Var names: \n";
+  for (auto& var : variables)
+    std::cout << var << "\n";
+  std::cout << "End of names\n";
+
+
   RemoveVariableFromFileData(data, variables);
+}
+
+UniqVarNames SignatureCompare::GetTypedefNames(const std::vector<string>& data) {
+  bool IsTypedef{};
+  UniqVarNames typedef_names;
+  std::stack<char> brackets;
+  for (const auto& line : data) {
+    if (line.find("typedef", 0) != string::npos) IsTypedef = true;
+    if (IsTypedef && line.find("{", 0) != string::npos) brackets.push('{');
+    if (IsTypedef && line.find("}", 0) != string::npos) {
+      if (brackets.size() == 1) {
+        IsTypedef = false;
+        string buffer;
+        buffer = GetTypedefNameFromLine(line);
+        typedef_names.insert(buffer);
+        brackets.pop();
+      } else if (brackets.size() > 1) {
+        brackets.pop();
+      }
+    }
+  }
+  return typedef_names;
+}
+
+inline string SignatureCompare::GetTypedefNameFromLine(const string& line) {
+  string buffer;
+  size_t i{};
+  for (i = 0; i < line.size() && !(std::isalpha(line[i])); i++){}
+  for (; i < line.size() && std::isalpha(line[i]); i++) {
+    buffer.push_back(line[i]);
+  }
+  return buffer;
 }
 
 void SignatureCompare::ReadVariableName(const string& from, string& buffer,
                                         size_t& pos) {
-  // if (from[pos] == ')') return;
-  // buffer.clear();
-  // string::const_iterator it = from.begin() + pos;
-  // for (; it != from.end(); it++) {
-  //   if (IsEndOfName(*it)) break;
-  //   buffer.push_back(*it);
-  // }
   if (from[pos] == ')') return;
   size_t from_size = from.size();
   buffer.clear();
@@ -108,37 +165,30 @@ void SignatureCompare::ReadVariableName(const string& from, string& buffer,
 }
 
 inline bool SignatureCompare::IsEndOfName(const char& current) {
-  static const string filter(" =(,");
+  static const string filter(" =(){},;\"");
   return filter.find(current) != string::npos;
 }
 
 void SignatureCompare::RemoveVariableFromFileData(
-    FileData& data, const vector<string>& variable_names) {
+    FileData& data, const UniqVarNames& variable_names) {
   size_t find_iterator{};
 
   // <position index, size of var>
   std::vector<std::pair<size_t, size_t>> var_positions;
-
+  
+  bool IsStartOfVar{};
   bool IsEndOfVar{};
   for (auto& line : data) {
     for (auto& var_name : variable_names) {
-      find_iterator = line.find(var_name, find_iterator);
-      if (find_iterator == string::npos) {
-        find_iterator = 0;
-        continue;
+      while ((find_iterator = line.find(var_name, find_iterator + 1)) !=
+             string::npos) {
+        IsStartOfVar =
+            (find_iterator == 0 || !(std::isalpha(line[find_iterator - 1])));
+        IsEndOfVar = !(std::isalpha(line[find_iterator + var_name.size()]));
+        if (IsStartOfVar && IsEndOfVar)
+          line.erase(find_iterator, var_name.size());
       }
-      IsEndOfVar = !(std::isalpha(line[find_iterator + var_name.size()]));
-      if (IsEndOfVar) line.erase(find_iterator, var_name.size());
+      find_iterator = 0;
     }
   }
 }
-
-
-// for (auto& line : data) {
-//   for (auto& var_name : variable_names) {
-//     while ((find_iterator = line.find(var_name, 0)) != string::npos) {
-//       bool IsEndOfVar = !(std::isalpha(var_name[find_iterator + var_name.size()]));
-//       if (IsEndOfVar) line.erase(find_iterator, var_name.size());
-//     }
-//   }
-// }

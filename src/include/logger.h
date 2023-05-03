@@ -8,6 +8,7 @@
 #include "json.hpp"
 using std::string;
 using json = nlohmann::json;
+using Analyze::AnalyzeInfo;
 
 void InitLog(std::ofstream& log_file, std::string peer_name);
 void WriteResultJson(const std::vector<AnalyzeInfo>& info);

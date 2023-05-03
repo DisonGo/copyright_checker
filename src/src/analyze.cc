@@ -21,10 +21,12 @@ void Analyze::AnalyzeProject(const RepoPair& reference_path,
     }
   }
 }
+
 size_t Analyze::GetLineCompareInfo(string reference_file,
                                    vector<string> peer_file_data) {
   return LineCompare::GetLineInfo(reference_file, peer_file_data);
 }
+
 size_t Analyze::GetSignatureCompareInfo(string reference_file,
                                         vector<string> peer_file_data) {
   return SignatureCompare::GetSignatureInfo(reference_file, peer_file_data);

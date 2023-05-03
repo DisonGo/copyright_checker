@@ -46,7 +46,7 @@ clean:
 	@rm -rf ./*.gc*
 	@rm -rf ./*.dSYM
 	@rm -rf report*
-	@rm -rf main.app
+	@rm -rf main test_main output.txt
 
 obj: $(LIB_OBJ)
 

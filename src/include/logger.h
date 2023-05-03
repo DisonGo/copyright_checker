@@ -4,7 +4,14 @@
 #include <fstream>
 #include <iostream>
 
+#include "analyze_info.h"
+#include "json.hpp"
+using std::string;
+using json = nlohmann::json;
+using Analyze::AnalyzeInfo;
+
 void InitLog(std::ofstream& log_file, std::string peer_name);
+void WriteResultJson(const std::vector<AnalyzeInfo>& info);
 void WriteResult(std::ofstream& log_file, size_t id, std::string git_link,
                  int signature_percent, int line_percent, std::string file1,
                  std::string file2);

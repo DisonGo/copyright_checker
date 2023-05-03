@@ -10,9 +10,10 @@
 #include "analyze.h"
 #include "file_manager.h"
 #include "flags.h"
+#include "json.hpp"
 #include "logger.h"
 #include "repo_manager.h"
-
+using json = nlohmann::json;
 using std::string;
 
 #ifdef _DEBUG
@@ -103,11 +104,7 @@ void GetResultConfig(string config_file, string peer_name,
   }
 
   std::sort(results.begin(), results.end(), pred());
-  for (auto& element : results) {
-    WriteResult(config, element.id, element.git_link, element.signature_info,
-                element.line_info, element.file_path_ref,
-                element.file_path_review);
-  }
+  WriteResultJson(results);
 }
 
 void FillPeerFilesData(FilePathArrays& paths, FilesData& filesdata) {

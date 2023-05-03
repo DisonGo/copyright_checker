@@ -62,28 +62,27 @@ void SignatureCompare::RemoveQuotes(string& str) {
 }
 
 void SignatureCompare::RemoveVariables(FileData& data) {
-  static vector<string> var_types = {      "int*",
-                                           "float*",
-                                           "char*",
-                                           "double*",
-                                           "int",
-                                           "char",
-                                           "float",
-                                           "double",
-                                           "void",
-                                           "enum",
-                                           "struct",
-                                           "size_t",
-                                           "short",
-                                           "long double",
-                                           "unsigned int",
-                                           "unsigned char",
-                                           "unsigned long long",
-                                           "unsigned",
-                                           "signed int",
-                                           "signed char",
-                                           "signed"};
-  
+  static vector<string> var_types = {"int*",
+                                     "float*",
+                                     "char*",
+                                     "double*",
+                                     "int",
+                                     "char",
+                                     "float",
+                                     "double",
+                                     "void",
+                                     "enum",
+                                     "struct",
+                                     "size_t",
+                                     "short",
+                                     "long double",
+                                     "unsigned int",
+                                     "unsigned char",
+                                     "unsigned long long",
+                                     "unsigned",
+                                     "signed int",
+                                     "signed char",
+                                     "signed"};
 
   UniqVarNames variables;
   UniqVarNames typedef_names = GetTypedefNames(data);
@@ -101,8 +100,7 @@ void SignatureCompare::RemoveVariables(FileData& data) {
         if (!find_result || !(std::isalpha(line[find_result - 1]))) {
           find_result += var_type.size() + 1;
           ReadVariableName(line, buffer, find_result);
-          if (buffer.size())
-            variables.insert(buffer);
+          if (buffer.size()) variables.insert(buffer);
         } else {
           find_result += 1;
         }
@@ -110,17 +108,16 @@ void SignatureCompare::RemoveVariables(FileData& data) {
     }
   }
 
-
-  std::cout << "Var names: \n";
-  for (auto& var : variables)
-    std::cout << var << "\n";
-  std::cout << "End of names\n";
-
+  // std::cout << "Var names: \n";
+  // for (auto& var : variables)
+  //   std::cout << var << "\n";
+  // std::cout << "End of names\n";
 
   RemoveVariableFromFileData(data, variables);
 }
 
-UniqVarNames SignatureCompare::GetTypedefNames(const std::vector<string>& data) {
+UniqVarNames SignatureCompare::GetTypedefNames(
+    const std::vector<string>& data) {
   bool IsTypedef{};
   UniqVarNames typedef_names;
   std::stack<char> brackets;
@@ -145,7 +142,8 @@ UniqVarNames SignatureCompare::GetTypedefNames(const std::vector<string>& data) 
 inline string SignatureCompare::GetTypedefNameFromLine(const string& line) {
   string buffer;
   size_t i{};
-  for (i = 0; i < line.size() && !(std::isalpha(line[i])); i++){}
+  for (i = 0; i < line.size() && !(std::isalpha(line[i])); i++) {
+  }
   for (; i < line.size() && std::isalpha(line[i]); i++) {
     buffer.push_back(line[i]);
   }
@@ -175,7 +173,7 @@ void SignatureCompare::RemoveVariableFromFileData(
 
   // <position index, size of var>
   std::vector<std::pair<size_t, size_t>> var_positions;
-  
+
   bool IsStartOfVar{};
   bool IsEndOfVar{};
   for (auto& line : data) {

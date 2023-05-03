@@ -6,24 +6,19 @@
 #include <string>
 #include <vector>
 
+#include "analyze_info.h"
 #include "file_manager.h"
+#include "json.hpp"
 #include "linecompare.h"
 #include "logger.h"
 #include "repo_manager.h"
 #include "signaturecompare.h"
-
+using json = nlohmann::json;
 using std::pair;
 using std::string;
 using std::vector;
 typedef vector<pair<vector<string>, string>> FilesData;
-struct AnalyzeInfo {
-  size_t id{};
-  string git_link;
-  size_t signature_info{};
-  size_t line_info{};
-  string file_path_ref;
-  string file_path_review;
-};
+
 class Analyze {
  public:
   Analyze() {}
@@ -41,4 +36,6 @@ class Analyze {
                                    vector<string> peer_file_data);
   static size_t GetSignatureCompareInfo(string reference_file,
                                         vector<string> peer_file_data);
+  static void to_json(json& j, const AnalyzeInfo& i);
+  static void from_json(const json& j, AnalyzeInfo& i);
 };

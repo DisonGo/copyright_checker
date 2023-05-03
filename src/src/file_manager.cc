@@ -100,11 +100,11 @@ FileData FileManager::ReadFileContent(ifstream& file,
 void FileManager::ReadPathArrayData(const PathArray& paths,
                                     FilesData& files_data) {
   for (auto& path : paths) {
-    FileData data = std::move(FileManager::ReadFileContent(path));
+    FileData data = FileManager::ReadFileContent(path);
     if (!data.empty()) {
       files_data.push_back({data, path});
     } else {
-      std::cout << "Data is empty in:" << path << "\n";
+      std::cerr << "Data is empty in:" << path << "\n";
     }
   }
 }

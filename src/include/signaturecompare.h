@@ -7,6 +7,8 @@
 #include <vector>
 
 #include "file_manager.h"
+#include "peer_file_data.h"
+using Analyze::PeerFileData;
 
 typedef std::unordered_set<std::string> UniqVarNames;
 
@@ -20,7 +22,11 @@ void RemoveVariableFromFileData(FileData& data,
 inline string GetTypedefNameFromLine(const string& line);
 void RemoveVariables(FileData& data);
 int GetSignatureInfo(const string& reference_file, FileData checked_file);
-double GetMatchedPercentage(FileData& ref, FileData& copy);
+int GetSignatureInfo(const string& reference_file,
+                     const PeerFileData& peer_file);
+double GetMatchedPercentage(const FileData& ref, const FileData& copy);
+void PrepareFilesData(FilesData& data);
+void PrepareFileData(FileData& data);
 FileData SignatureNormalize(std::ifstream& path);
 string RemoveExtra(const string& str);
 void SignatureNormalize(FileData& data);

@@ -8,7 +8,16 @@ int LineCompare::GetLineInfo(const string& reference_file,
   return GetMatchPercentage(reference, check);
 }
 
-int LineCompare::GetMatchPercentage(FileData& ref, FileData& check) {
+int LineCompare::GetLineInfo(const string& reference_file,
+                             const PeerFileData& peer_file) {
+  if (reference_file.empty()) return 0;
+  FileData reference = FileManager::ReadFileContent(reference_file);
+  if (reference.size() == 0 || peer_file.lineCompData.size() == 0) return 0;
+  return GetMatchPercentage(reference, peer_file.lineCompData);
+}
+
+int LineCompare::GetMatchPercentage(const FileData& ref,
+                                    const FileData& check) {
   size_t all_count{};
   size_t matched_count{};
 
@@ -28,7 +37,12 @@ int LineCompare::GetMatchPercentage(FileData& ref, FileData& check) {
                    static_cast<double>(matched_count));
   return static_cast<int>(result);
 }
-
+void LineCompare::PrepareFilesData(FilesData& data) {
+  for (auto& fileData : data) LineCompare::PrepareFileData(fileData.first);
+}
+void LineCompare::PrepareFileData(FileData& data) {
+  data = std::move(FileManager::TransformFileData(data, NormalizeString));
+}
 string LineCompare::NormalizeString(const string& str) {
   if (IsPreProcessing(str)) return "";
   string new_string;

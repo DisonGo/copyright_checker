@@ -1,8 +1,8 @@
 #include "analyze.h"
 
 void Analyze::AnalyzeProject(const RepoPair& reference_path,
-                             FilesData& peer_files, vector<AnalyzeInfo>& result,
-                             size_t id) {
+                             PeerFilesData& peer_files,
+                             vector<AnalyzeInfo>& result, size_t id) {
   size_t signature{};
   size_t line{};
   FilePathArrays paths = FileManager::FindSourcesC(reference_path.second);
@@ -22,12 +22,21 @@ void Analyze::AnalyzeProject(const RepoPair& reference_path,
   }
 }
 
-size_t Analyze::GetLineCompareInfo(string reference_file,
-                                   vector<string> peer_file_data) {
+size_t Analyze::GetLineCompareInfo(const string& reference_file,
+                                   FileData peer_file_data) {
   return LineCompare::GetLineInfo(reference_file, peer_file_data);
 }
 
-size_t Analyze::GetSignatureCompareInfo(string reference_file,
-                                        vector<string> peer_file_data) {
+size_t Analyze::GetSignatureCompareInfo(const string& reference_file,
+                                        FileData peer_file_data) {
+  return SignatureCompare::GetSignatureInfo(reference_file, peer_file_data);
+}
+size_t Analyze::GetLineCompareInfo(const string& reference_file,
+                                   const PeerFileData& peer_file_data) {
+  return LineCompare::GetLineInfo(reference_file, peer_file_data);
+}
+
+size_t Analyze::GetSignatureCompareInfo(const string& reference_file,
+                                        const PeerFileData& peer_file_data) {
   return SignatureCompare::GetSignatureInfo(reference_file, peer_file_data);
 }

@@ -3,7 +3,7 @@ using fm = FileManager;
 int SignatureCompare::GetSignatureInfo(const string& reference_file,
                                        FileData checked_file) {
   if (reference_file.empty()) return 1;
-  FileData reference = fm::ReadFileContent(reference_file);
+  FileData reference = fm::ReadFileContent(reference_file, RemoveCommentaries);
   SignatureNormalize(reference);
   SignatureNormalize(checked_file);
   RemoveVariables(reference);
@@ -23,18 +23,26 @@ int SignatureCompare::GetSignatureInfo(const string& reference_file,
   return static_cast<int>(
       GetMatchedPercentage(reference, peer_file.signatureData));
 }
-
 string SignatureCompare::RemoveCommentaries(const string& line) {
-  string new_line = line;
   static bool IsOpenCommentary{};
-  size_t commentary_start = line.find("/*", 0);
-  size_t commentary_end = line.find("*/", 0);
+  if (line.size() < 2 && !IsOpenCommentary) return line;
+  string new_line = line;
+
+  size_t one_line_comment = new_line.find("//", 0);
+  bool IsOneLineFound = (one_line_comment != string::npos);
+  if (!IsOpenCommentary && IsOneLineFound) {
+    new_line.erase(one_line_comment, new_line.size() - one_line_comment);
+    return new_line;
+  }
+
+  size_t commentary_start = new_line.find("/*", 0);
+  size_t commentary_end = new_line.find("*/", 0);
+
   bool IsOpenFound = (commentary_start != string::npos);
   bool IsCloseFound = (commentary_end != string::npos);
 
-  if (!IsOpenCommentary)
-    IsOpenCommentary = IsOpenFound;
-  
+  if (!IsOpenCommentary) IsOpenCommentary = IsOpenFound;
+
   if (IsOpenCommentary) {
     if (IsCloseFound) {
       size_t offset = IsOpenFound ? commentary_start : 0;
@@ -71,6 +79,7 @@ void SignatureCompare::PrepareFilesData(FilesData& data) {
 }
 void SignatureCompare::PrepareFileData(FileData& data) {
   SignatureNormalize(data);
+  data = std::move(fm::TransformFileData(data, RemoveCommentaries));
   RemoveVariables(data);
 }
 
@@ -165,7 +174,7 @@ UniqVarNames SignatureCompare::GetTypedefNames(
   // bool IsTypedef{};
   // size_t index{};
   UniqVarNames typedef_names;
-      if (data.size() > 0 ) return typedef_names;
+  if (data.size() > 0) return typedef_names;
   std::stack<char> brackets;
 
   return typedef_names;

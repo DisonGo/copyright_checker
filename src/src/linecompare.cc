@@ -42,7 +42,7 @@ void LineCompare::PrepareFilesData(FilesData& data) {
   for (auto& fileData : data) LineCompare::PrepareFileData(fileData.first);
 }
 void LineCompare::PrepareFileData(FileData& data) {
-  data = std::move(FileManager::TransformFileData(data, NormalizeString));
+  data = std::move(fm::TransformFileData(data, NormalizeString));
 }
 string LineCompare::NormalizeString(const string& str) {
   if (IsPreProcessing(str)) return "";

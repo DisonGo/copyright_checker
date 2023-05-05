@@ -6,14 +6,15 @@
 
 #include "analyze_info.h"
 #include "json.hpp"
+namespace Logger {
 using std::string;
+using std::vector;
 using json = nlohmann::json;
 using Analyze::AnalyzeInfo;
-
-void InitLog(std::ofstream& log_file, std::string peer_name);
-void WriteResultJson(const std::vector<AnalyzeInfo>& info);
-void WriteResult(std::ofstream& log_file, size_t id, std::string git_link,
-                 int signature_percent, int line_percent, std::string file1,
-                 std::string file2);
-void WriteMessage(std::ofstream& log_file, const std::string& msg);
+typedef vector<vector<AnalyzeInfo>> ThreadsAnalyzeResults;
+void WriteResultJson(const vector<AnalyzeInfo>& info);
+bool SortAnalyzeBySignature(const AnalyzeInfo& first,
+                            const AnalyzeInfo& second);
+void GetResultConfig(ThreadsAnalyzeResults& analyze_results);
+}  // namespace Logger
 #endif  //  SRC_INCLUDE_LOGGER_H

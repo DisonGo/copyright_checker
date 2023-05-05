@@ -15,8 +15,7 @@ int SignatureCompare::GetSignatureInfo(const string& reference_file,
 int SignatureCompare::GetSignatureInfo(const string& reference_file,
                                        const PeerFileData& peer_file) {
   if (reference_file.empty()) return 1;
-  FileData reference = fm::ReadFileContent(reference_file);
-  SignatureNormalize(reference);
+  FileData reference = fm::ReadFileContent(reference_file, RemoveExtra);
   RemoveVariables(reference);
 
   if (reference.size() == 0 || peer_file.signatureData.size() == 0) return 0;
@@ -155,7 +154,6 @@ void SignatureCompare::RemoveVariables(FileData& data) {
         if (find_result == 0 || (IsStartVarType && IsEndVarType)) {
           find_result += var_type.size() + 1;
           ReadVariableName(line, buffer, find_result);
-          std::cout << "ReadVarName() = " << buffer << "\n";
           if (buffer.size()) variables.insert(buffer);
         } else {
           find_result += 1;
@@ -172,8 +170,7 @@ void SignatureCompare::RemoveVariables(FileData& data) {
   RemoveVariableFromFileData(data, variables);
 }
 
-UniqVarNames SignatureCompare::GetTypedefNames(
-    const FileData& data) {
+UniqVarNames SignatureCompare::GetTypedefNames(const FileData& data) {
   bool IsTypedef{};
   UniqVarNames typedef_names;
   std::stack<char> brackets;
@@ -187,25 +184,20 @@ UniqVarNames SignatureCompare::GetTypedefNames(
     } else if (line.find("{", 0) != string::npos) {
       brackets.push('{');
     } else if (line.find("}", 0) != string::npos) {
-      if (brackets.size() > 1) brackets.pop();
+      if (brackets.size() > 1)
+        brackets.pop();
       else {
         brackets.pop();
         IsTypedef = false;
         string buffer;
         buffer.reserve(line.size());
         for (size_t i = 0; i < line.size(); i++)
-          if (std::isalpha(line[i]) || line[i] == ',') 
+          if (std::isalpha(line[i]) || line[i] == ',')
             buffer.push_back(line[i]);
         PushTypedefNames(buffer, typedef_names);
       }
     }
   }
-
-  std::cout << "====\n";
-  for (auto& var : typedef_names) {
-    std::cout << var << "\n";
-  }
-
 
   return typedef_names;
 }
@@ -215,8 +207,10 @@ void SignatureCompare::PushTypedefNames(string& str, UniqVarNames& names) {
   size_t end{};
   while (end != string::npos) {
     end = str.find(',', start);
-    if (end != string::npos) names.insert(str.substr(start, end - start));
-    else names.insert(str.substr(start, str.size() - start));
+    if (end != string::npos)
+      names.insert(str.substr(start, end - start));
+    else
+      names.insert(str.substr(start, str.size() - start));
     start = end + 1;
   }
 }
@@ -242,7 +236,6 @@ void SignatureCompare::RemoveVariableFromFileData(
     FileData& data, const UniqVarNames& variable_names) {
   size_t find_iterator{};
 
-
   // <position index, size of var>
   std::vector<std::pair<size_t, size_t>> var_positions;
 
@@ -252,9 +245,10 @@ void SignatureCompare::RemoveVariableFromFileData(
     for (auto& var_name : variable_names) {
       while ((find_iterator = line.find(var_name, find_iterator + 1)) !=
              string::npos) {
-        IsStartOfVar = 
-            (find_iterator == 0 || SignatureCompare::IsStartOfVar(line[find_iterator - 1]));
-        IsEndOfVar = SignatureCompare::IsEndOfVar(line[find_iterator + var_name.size()]);
+        IsStartOfVar = (find_iterator == 0 || SignatureCompare::IsStartOfVar(
+                                                  line[find_iterator - 1]));
+        IsEndOfVar =
+            SignatureCompare::IsEndOfVar(line[find_iterator + var_name.size()]);
         if (IsStartOfVar && IsEndOfVar)
           line.erase(find_iterator, var_name.size());
       }

@@ -54,9 +54,8 @@ string LineCompare::NormalizeString(const string& str) {
 }
 
 inline bool LineCompare::IsForbidden(const char symbol) {
-  string forbiddeg_symbols = "(){};\t";
-  if (forbiddeg_symbols.find(symbol, 0) != string::npos) return true;
-  return false;
+  const static string forbiddeg_symbols = "(){};\t";
+  return (forbiddeg_symbols.find(symbol, 0) != string::npos);
 }
 
 inline bool LineCompare::IsPreProcessing(const string& str) {

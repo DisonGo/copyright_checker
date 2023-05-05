@@ -17,8 +17,7 @@ using std::string;
 int main() {
   FileManager fm;
   FileData data = fm.ReadFileContent(
-      "/Users/evverenn/Desktop/Projects/C6_s21_matrix-4/src/source/"
-      "s21_get_minor.c");
+      "/Users/burnsdov/Eye_of_Verter/src/s21_get_minor.c");
   SignatureCompare::RemoveVariables(data);
   for (const auto& line : data) std::cout << line << "\n";
 }

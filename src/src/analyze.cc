@@ -10,7 +10,7 @@ bool Analyze::CheckAnalyzeInput(const string& keyword,
   bool p_p_empty = project_path.empty();
   if (k_empty) std::cerr << "Empty keyword\n";
   if (p_p_empty) std::cerr << "Empty project_path\n";
-  return !(k_empty || p_p_empty);
+  return (k_empty || p_p_empty);
 }
 void Analyze::CloseAllThreads(pair<vector<thread>, vector<string>>& threads) {
   for (size_t i = 0; i < threads.first.size(); i++) {
@@ -22,9 +22,14 @@ void Analyze::CloseAllThreads(pair<vector<thread>, vector<string>>& threads) {
 }
 void Analyze::CloseAllThreads(vector<thread>& threads) {
   size_t threads_count = threads.size();
-  for (size_t i = 0; i < threads_count; i++) {
-    threads[i].join();
-    std::cout << "Threads left: " << threads_count-- << "\n";
+  while (threads_count) {
+    for (size_t i = 0; i < threads.size(); i++) {
+      if (threads[i].joinable()) {
+        threads[i].join();
+        threads_count--;
+        std::cout << "Threads left: " << threads_count << "\n";
+      }
+    }
   }
 }
 void Analyze::StartAnalyze(string keyword, string project_path,

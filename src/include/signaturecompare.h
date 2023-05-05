@@ -3,6 +3,7 @@
 #include <iostream>
 #include <set>
 #include <stack>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -16,7 +17,7 @@ using std::string;
 using std::vector;
 
 namespace SignatureCompare {
-UniqVarNames GetTypedefNames(const std::vector<std::string>& lines);
+UniqVarNames GetTypedefNames(const FileData& lines);
 string RemoveCommentaries(const string& line); 
 void RemoveVariableFromFileData(FileData& data,
                                 const UniqVarNames& variable_names);
@@ -32,6 +33,9 @@ FileData SignatureNormalize(std::ifstream& path);
 string RemoveExtra(const string& str);
 void SignatureNormalize(FileData& data);
 void RemoveQuotes(string& str);
+void PushTypedefNames(string& str, UniqVarNames& names);
 void ReadVariableName(const string& from, string& buffer, size_t& pos);
-inline bool IsEndOfName(const char& current);
+inline bool IsEndOfName(const char current);
+inline bool IsStartOfVar(const char symbol);
+inline bool IsEndOfVar(const char symbol);
 };  // namespace SignatureCompare

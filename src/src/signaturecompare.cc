@@ -115,27 +115,27 @@ void SignatureCompare::RemoveQuotes(string& str) {
 }
 
 void SignatureCompare::RemoveVariables(FileData& data) {
-  static vector<string> var_types = {"int*",
-                                     "float*",
-                                     "char*",
-                                     "double*",
-                                     "int",
-                                     "char",
-                                     "float",
-                                     "double",
-                                     "void",
-                                     "enum",
-                                     "struct",
-                                     "size_t",
-                                     "short",
-                                     "long double",
-                                     "unsigned int",
-                                     "unsigned char",
-                                     "unsigned long long",
-                                     "unsigned",
-                                     "signed int",
-                                     "signed char",
-                                     "signed"};
+  vector<string> var_types = {"int*",
+                              "float*",
+                              "char*",
+                              "double*",
+                              "int",
+                              "char",
+                              "float",
+                              "double",
+                              "void",
+                              "enum",
+                              "struct",
+                              "size_t",
+                              "short",
+                              "long double",
+                              "unsigned int",
+                              "unsigned char",
+                              "unsigned long long",
+                              "unsigned",
+                              "signed int",
+                              "signed char",
+                              "signed"};
 
   UniqVarNames variables;
   UniqVarNames typedef_names = GetTypedefNames(data);
@@ -150,9 +150,12 @@ void SignatureCompare::RemoveVariables(FileData& data) {
     for (const auto& var_type : var_types) {
       find_result = 0;
       while ((find_result = line.find(var_type, find_result)) != string::npos) {
-        if (!find_result || !(std::isalpha(line[find_result - 1]))) {
+        bool IsStartVarType = IsStartOfVar(line[find_result - 1]);
+        bool IsEndVarType = std::isspace(line[find_result + var_type.size()]);
+        if (find_result == 0 || (IsStartVarType && IsEndVarType)) {
           find_result += var_type.size() + 1;
           ReadVariableName(line, buffer, find_result);
+          std::cout << "ReadVarName() = " << buffer << "\n";
           if (buffer.size()) variables.insert(buffer);
         } else {
           find_result += 1;
@@ -170,7 +173,7 @@ void SignatureCompare::RemoveVariables(FileData& data) {
 }
 
 UniqVarNames SignatureCompare::GetTypedefNames(
-    const std::vector<string>& data) {
+    const FileData& data) {
   bool IsTypedef{};
   UniqVarNames typedef_names;
   std::stack<char> brackets;
@@ -186,25 +189,36 @@ UniqVarNames SignatureCompare::GetTypedefNames(
     } else if (line.find("}", 0) != string::npos) {
       if (brackets.size() > 1) brackets.pop();
       else {
-        std::cout << "typedef line = " << line << "\n";
         brackets.pop();
+        IsTypedef = false;
+        string buffer;
+        buffer.reserve(line.size());
+        for (size_t i = 0; i < line.size(); i++)
+          if (std::isalpha(line[i]) || line[i] == ',') 
+            buffer.push_back(line[i]);
+        PushTypedefNames(buffer, typedef_names);
       }
     }
+  }
+
+  std::cout << "====\n";
+  for (auto& var : typedef_names) {
+    std::cout << var << "\n";
   }
 
 
   return typedef_names;
 }
 
-inline string SignatureCompare::GetTypedefNameFromLine(const string& line) {
-  string buffer;
-  size_t i{};
-  for (i = 0; i < line.size() && !(std::isalpha(line[i])); i++) {
+void SignatureCompare::PushTypedefNames(string& str, UniqVarNames& names) {
+  size_t start{};
+  size_t end{};
+  while (end != string::npos) {
+    end = str.find(',', start);
+    if (end != string::npos) names.insert(str.substr(start, end - start));
+    else names.insert(str.substr(start, str.size() - start));
+    start = end + 1;
   }
-  for (; i < line.size() && std::isalpha(line[i]); i++) {
-    buffer.push_back(line[i]);
-  }
-  return buffer;
 }
 
 void SignatureCompare::ReadVariableName(const string& from, string& buffer,
@@ -214,19 +228,20 @@ void SignatureCompare::ReadVariableName(const string& from, string& buffer,
   buffer.clear();
   for (; pos < from_size; pos++) {
     char current = from[pos];
-    if (IsEndOfName(current)) break;
+    if (IsEndOfVar(current)) break;
     buffer.push_back(current);
   }
 }
 
-inline bool SignatureCompare::IsEndOfName(const char& current) {
-  static const string filter(" =(){},;\"");
+inline bool SignatureCompare::IsEndOfName(const char current) {
+  static const string filter(" =(){},;\"'");
   return filter.find(current) != string::npos;
 }
 
 void SignatureCompare::RemoveVariableFromFileData(
     FileData& data, const UniqVarNames& variable_names) {
   size_t find_iterator{};
+
 
   // <position index, size of var>
   std::vector<std::pair<size_t, size_t>> var_positions;
@@ -237,13 +252,22 @@ void SignatureCompare::RemoveVariableFromFileData(
     for (auto& var_name : variable_names) {
       while ((find_iterator = line.find(var_name, find_iterator + 1)) !=
              string::npos) {
-        IsStartOfVar =
-            (find_iterator == 0 || !(std::isalpha(line[find_iterator - 1])));
-        IsEndOfVar = !(std::isalpha(line[find_iterator + var_name.size()]));
+        IsStartOfVar = 
+            (find_iterator == 0 || SignatureCompare::IsStartOfVar(line[find_iterator - 1]));
+        IsEndOfVar = SignatureCompare::IsEndOfVar(line[find_iterator + var_name.size()]);
         if (IsStartOfVar && IsEndOfVar)
           line.erase(find_iterator, var_name.size());
       }
       find_iterator = 0;
     }
   }
+}
+
+inline bool SignatureCompare::IsStartOfVar(const char symbol) {
+  return !(std::isalpha(symbol));
+}
+
+inline bool SignatureCompare::IsEndOfVar(const char symbol) {
+  static const string filter("0123456789_");
+  return !((filter.find(symbol, 0) != string::npos) || (std::isalpha(symbol)));
 }

@@ -44,6 +44,7 @@ class RepoManager {
   ~RepoManager();
   map<string, UniqueRepoPairs> repoPaths;
   RepoURLs FetchRepoUrls(string keyword);
-  void DownloadRepos(RepoURLs urls, const string& keyword);
+  void DownloadRepos(const string& keyword);
+  void DownloadRepos(const RepoURLs& urls, const string& keyword);
   static string DefaultRepoPath();
 };

@@ -23,6 +23,7 @@ string RepoManager::ParseGitNameFromStr(string str) {
   string gitName = userName + '/' + Name;
   return gitName;
 }
+
 bool RepoManager::IsKeywordUsed(const string& keyword) {
   return repoPaths.find(keyword) != repoPaths.end();
 }
@@ -31,7 +32,7 @@ bool RepoManager::IsPairDownloaded(const RepoPair& pair,
   return pair_set.find(pair) != pair_set.end();
 }
 void RepoManager::CheckRepoDir() {
-  const string gitPrefix = "https://github.com/";
+  static const string gitPrefix = "https://github.com/";
   vector<string> keywords = FileManager::FindSubDirs(repoDir);
   for (auto& keyword : keywords) {
     string keyword_path = repoDir + "/" + keyword;
@@ -70,7 +71,7 @@ RepoManager::RepoManager() {
 }
 RepoManager::RepoManager(string dir) {
   if (*(dir.end() - 1) == '/') dir.erase(dir.end() - 1, dir.end());
-  repoDir = dir;
+  repoDir = dir.empty() ? DefaultRepoPath() : dir;
   git_libgit2_init();
   CheckRepoDir();
   cli.set_bearer_token_auth(token);
@@ -97,7 +98,37 @@ RepoURLs RepoManager::FetchRepoUrls(string keyword) {
   return urls;
 }
 
-void RepoManager::DownloadRepos(RepoURLs urls, const string& keyword) {
+void RepoManager::DownloadRepos(const string& keyword) {
+  RepoURLs urls = FetchRepoUrls(keyword);
+  const bool keyword_used = IsKeywordUsed(keyword);
+  if (!keyword_used) repoPaths.insert({keyword, {}});
+  auto& current_key_set = repoPaths[keyword];
+
+  vector<thread> threads;
+  vector<pair<RepoPair, int>> errors(urls.size());
+
+  for (auto& error : errors) error.second = -2;
+
+  for (auto& url : urls) {
+    string gitName = ParseGitNameFromStr(url);
+    string path = repoDir + "/" + keyword + "/" + gitName;
+
+    RepoPair new_pair{url, path};
+
+    if (keyword_used && IsPairDownloaded(new_pair, current_key_set)) continue;
+
+    errors.push_back({new_pair, 0});
+    auto& last_error = errors[errors.size() - 1];
+
+    threads.push_back(CCT(url, path, last_error));
+  }
+
+  for (auto& th : threads) th.join();
+
+  for (auto& error : errors)
+    if (!error.second) current_key_set.insert(error.first);
+}
+void RepoManager::DownloadRepos(const RepoURLs& urls, const string& keyword) {
   const bool keyword_used = IsKeywordUsed(keyword);
   if (!keyword_used) repoPaths.insert({keyword, {}});
   auto& current_key_set = repoPaths[keyword];

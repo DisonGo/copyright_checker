@@ -17,6 +17,7 @@ using std::vector;
 
 namespace SignatureCompare {
 UniqVarNames GetTypedefNames(const std::vector<std::string>& lines);
+string RemoveCommentaries(const string& line); 
 void RemoveVariableFromFileData(FileData& data,
                                 const UniqVarNames& variable_names);
 inline string GetTypedefNameFromLine(const string& line);

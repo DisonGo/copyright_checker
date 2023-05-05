@@ -24,6 +24,30 @@ int SignatureCompare::GetSignatureInfo(const string& reference_file,
       GetMatchedPercentage(reference, peer_file.signatureData));
 }
 
+string SignatureCompare::RemoveCommentaries(const string& line) {
+  string new_line = line;
+  static bool IsOpenCommentary{};
+  size_t commentary_start = line.find("/*", 0);
+  size_t commentary_end = line.find("*/", 0);
+  bool IsOpenFound = (commentary_start != string::npos);
+  bool IsCloseFound = (commentary_end != string::npos);
+
+  if (!IsOpenCommentary)
+    IsOpenCommentary = IsOpenFound;
+  
+  if (IsOpenCommentary) {
+    if (IsCloseFound) {
+      size_t offset = IsOpenFound ? commentary_start : 0;
+      new_line.erase(offset, commentary_end + 2);
+      IsOpenCommentary = (IsOpenFound && commentary_start > commentary_end);
+    } else {
+      if (!IsOpenFound) return "";
+      new_line.erase(commentary_start, new_line.size() - commentary_start);
+    }
+  }
+  return new_line;
+}
+
 double SignatureCompare::GetMatchedPercentage(const FileData& ref,
                                               const FileData& copy) {
   size_t all_count{};
@@ -138,35 +162,12 @@ void SignatureCompare::RemoveVariables(FileData& data) {
 
 UniqVarNames SignatureCompare::GetTypedefNames(
     const std::vector<string>& data) {
-  bool IsTypedef{};
-  size_t index{};
+  // bool IsTypedef{};
+  // size_t index{};
   UniqVarNames typedef_names;
+      if (data.size() > 0 ) return typedef_names;
   std::stack<char> brackets;
-  for (const auto& line : data) {
-    index = 0;
-    if (line.find("typedef", index) != std::string::npos) {
-      brackets.push('{');
-      IsTypedef = true;
-      continue;
-    } else if (IsTypedef && line.find('{', index) != std::string::npos) {
-      brackets.push('{');
-      continue;
-    } else if (IsTypedef && line.find('}', index) != std::string::npos) {
-      if (brackets.size() == 1) {
-        brackets.pop();
-        IsTypedef = false;
-        string buffer;
-        for (size_t i = 0; i < line.size() && line[i] != ','; i++) {
-          if (std::isalpha(line[i])) buffer.push_back(line[i]);
-        }
-        typedef_names.insert(buffer);
-        continue;
-      } else {
-        brackets.pop();
-        continue;
-      }
-    }
-  }
+
   return typedef_names;
 }
 

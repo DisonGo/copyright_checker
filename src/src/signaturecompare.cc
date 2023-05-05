@@ -1,8 +1,9 @@
 #include "signaturecompare.h"
+using fm = FileManager;
 int SignatureCompare::GetSignatureInfo(const string& reference_file,
                                        FileData checked_file) {
   if (reference_file.empty()) return 1;
-  FileData reference = FileManager::ReadFileContent(reference_file);
+  FileData reference = fm::ReadFileContent(reference_file);
   SignatureNormalize(reference);
   SignatureNormalize(checked_file);
   RemoveVariables(reference);
@@ -11,8 +12,20 @@ int SignatureCompare::GetSignatureInfo(const string& reference_file,
   if (reference.size() == 0 || checked_file.size() == 0) return 0;
   return static_cast<int>(GetMatchedPercentage(reference, checked_file));
 }
+int SignatureCompare::GetSignatureInfo(const string& reference_file,
+                                       const PeerFileData& peer_file) {
+  if (reference_file.empty()) return 1;
+  FileData reference = fm::ReadFileContent(reference_file);
+  SignatureNormalize(reference);
+  RemoveVariables(reference);
 
-double SignatureCompare::GetMatchedPercentage(FileData& ref, FileData& copy) {
+  if (reference.size() == 0 || peer_file.signatureData.size() == 0) return 0;
+  return static_cast<int>(
+      GetMatchedPercentage(reference, peer_file.signatureData));
+}
+
+double SignatureCompare::GetMatchedPercentage(const FileData& ref,
+                                              const FileData& copy) {
   size_t all_count{};
   size_t match_count{};
   for (size_t i = 0; i < ref.size(); i++) {
@@ -29,13 +42,20 @@ double SignatureCompare::GetMatchedPercentage(FileData& ref, FileData& copy) {
 
   return (100.0 / all_count * match_count);
 }
+void SignatureCompare::PrepareFilesData(FilesData& data) {
+  for (auto& fileData : data) SignatureCompare::PrepareFileData(fileData.first);
+}
+void SignatureCompare::PrepareFileData(FileData& data) {
+  SignatureNormalize(data);
+  RemoveVariables(data);
+}
 
 FileData SignatureCompare::SignatureNormalize(std::ifstream& path) {
-  return FileManager::ReadFileContent(path, RemoveExtra);
+  return fm::ReadFileContent(path, RemoveExtra);
 }
 
 void SignatureCompare::SignatureNormalize(FileData& data) {
-  data = std::move(FileManager::TransformFileData(data, RemoveExtra));
+  data = std::move(fm::TransformFileData(data, RemoveExtra));
 }
 
 string SignatureCompare::RemoveExtra(const string& str) {

@@ -16,12 +16,20 @@
 using std::pair;
 using std::string;
 using std::vector;
-typedef vector<pair<FileData, string>> FilesData;
 namespace Analyze {
-void AnalyzeProject(const RepoPair& reference_path, FilesData& peer_files,
+
+void AnalyzeProject(const RepoPair& reference_path, PeerFilesData& peer_files,
                     vector<AnalyzeInfo>& result, size_t id);
-size_t GetLineCompareInfo(string reference_file, vector<string> peer_file_data);
-size_t GetSignatureCompareInfo(string reference_file,
-                               vector<string> peer_file_data);
+
+size_t GetLineCompareInfo(const string& reference_file,
+                          FileData peer_file_data);
+
+size_t GetSignatureCompareInfo(const string& reference_file,
+                               FileData peer_file_data);
+size_t GetLineCompareInfo(const string& reference_file,
+                          const PeerFileData& peer_file_data);
+
+size_t GetSignatureCompareInfo(const string& reference_file,
+                               const PeerFileData& peer_file_data);
 }  // namespace Analyze
 #endif  //  SRC_INCLUDE_NALYZE__H

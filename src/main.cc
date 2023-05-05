@@ -22,8 +22,8 @@ void CloseAllThreads(
 #endif  //  _DEBUG
 
 bool IsConfirmProject(Flags& flags);
-string GetPath();
-void FillPeerFilesData(FilePathArrays& paths, FilesData& filesdata);
+void FillPeerFilesData(FilePathArrays& paths,
+                       Analyze::PeerFilesData& filesdata);
 void CloseAllThreads(std::vector<std::thread>& threads);
 void GetResultConfig(string config_file, string peer_name,
                      std::vector<std::vector<AnalyzeInfo>>& analyze_results);
@@ -46,7 +46,8 @@ int main() {
   Flags flags(argv2.size(), argv2);
   if (flags.GetState() == false) return 1;
   std::cout << ShowCreators() << "\n";
-  RepoManager man(GetPath());
+
+  RepoManager man;
   // if (!IsConfirmProject(flags)) return 1;
   string project_name = flags.GetProjectName();
   RepoURLs urls = man.FetchRepoUrls(project_name);
@@ -54,14 +55,10 @@ int main() {
   std::cout << "Used repositories: " << man.repoPaths[project_name].size()
             << "\n";
 
-  // for (auto& var : man.repoPaths[project_name]) {
-  //   std::cout << var.first << "\t" << var.second << "\n";
-  // }
-
   size_t id{};
   FilePathArrays peer_paths = FileManager::FindSourcesC(flags.GetProjectPath());
 
-  FilesData peer_files;
+  Analyze::PeerFilesData peer_files{};
   FillPeerFilesData(peer_paths, peer_files);
   if (peer_files.empty()) std::cout << "Peer files is empty\n";
 #ifdef _DEBUG
@@ -107,8 +104,11 @@ void GetResultConfig(string config_file, string peer_name,
   WriteResultJson(results);
 }
 
-void FillPeerFilesData(FilePathArrays& paths, FilesData& filesdata) {
+void FillPeerFilesData(FilePathArrays& paths,
+                       Analyze::PeerFilesData& peerData) {
+  FilesData filesdata;
   FileManager::ReadPathArrayData(paths.sources, filesdata);
+  Analyze::FromFilesData(peerData, filesdata);
 }
 
 void CloseAllThreads(std::vector<std::thread>& threads) {
@@ -145,9 +145,4 @@ bool IsConfirmProject(Flags& flags) {
   std::cin >> answer;
   if (answer != "y" && answer != "yes") return false;
   return true;
-}
-
-string GetPath() {
-  string username = getenv("USER");
-  return string("/Users/" + username + "/goinfre/repos");
 }

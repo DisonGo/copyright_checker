@@ -85,11 +85,11 @@ void SignatureCompare::RemoveVariables(FileData& data) {
                                      "signed"};
 
   UniqVarNames variables;
-  UniqVarNames typedef_names = GetTypedefNames(data);
-  for (auto& var : typedef_names) {
-    variables.insert(var);
-    var_types.push_back(var);
-  }
+  // UniqVarNames typedef_names = GetTypedefNames(data);
+  // for (auto& var : typedef_names) {
+  //   variables.insert(var);
+  //   var_types.push_back(var);
+  // }
 
   size_t find_result{};
   string buffer;

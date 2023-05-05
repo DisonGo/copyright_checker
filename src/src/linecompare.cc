@@ -1,9 +1,10 @@
 #include "linecompare.h"
+using fm = FileManager;
 int LineCompare::GetLineInfo(const string& reference_file,
                              const FileData& peer_file) {
   if (reference_file.empty()) return 0;
-  FileData reference = FileManager::ReadFileContent(reference_file, NormalizeString);
-  FileData check = FileManager::TransformFileData(peer_file, NormalizeString);
+  FileData reference = fm::ReadFileContent(reference_file, NormalizeString);
+  FileData check = fm::TransformFileData(peer_file, NormalizeString);
   if (reference.size() == 0 || check.size() == 0) return 0;
 
   return GetMatchPercentage(reference, check);
@@ -12,7 +13,7 @@ int LineCompare::GetLineInfo(const string& reference_file,
 int LineCompare::GetLineInfo(const string& reference_file,
                              const PeerFileData& peer_file) {
   if (reference_file.empty()) return 0;
-  FileData reference = FileManager::ReadFileContent(reference_file);
+  FileData reference = fm::ReadFileContent(reference_file, NormalizeString);
   if (reference.size() == 0 || peer_file.lineCompData.size() == 0) return 0;
   return GetMatchPercentage(reference, peer_file.lineCompData);
 }
@@ -59,8 +60,8 @@ inline bool LineCompare::IsForbidden(const char symbol) {
 }
 
 inline bool LineCompare::IsPreProcessing(const string& str) {
-  static const vector<string> pre_processing = {
-      "#include", "#ifndef", "#define", "#endif"};
+  static const vector<string> pre_processing = {"#include", "#ifndef",
+                                                "#define", "#endif"};
   for (size_t i = 0; i < pre_processing.size(); i++)
     if (str.find(pre_processing[i], 0) != string::npos) return true;
   return false;

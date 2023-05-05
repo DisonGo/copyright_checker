@@ -1,8 +1,9 @@
 #include "signaturecompare.h"
+using fm = FileManager;
 int SignatureCompare::GetSignatureInfo(const string& reference_file,
                                        FileData checked_file) {
   if (reference_file.empty()) return 1;
-  FileData reference = FileManager::ReadFileContent(reference_file);
+  FileData reference = fm::ReadFileContent(reference_file);
   SignatureNormalize(reference);
   SignatureNormalize(checked_file);
   RemoveVariables(reference);
@@ -14,7 +15,7 @@ int SignatureCompare::GetSignatureInfo(const string& reference_file,
 int SignatureCompare::GetSignatureInfo(const string& reference_file,
                                        const PeerFileData& peer_file) {
   if (reference_file.empty()) return 1;
-  FileData reference = FileManager::ReadFileContent(reference_file);
+  FileData reference = fm::ReadFileContent(reference_file);
   SignatureNormalize(reference);
   RemoveVariables(reference);
 
@@ -50,11 +51,11 @@ void SignatureCompare::PrepareFileData(FileData& data) {
 }
 
 FileData SignatureCompare::SignatureNormalize(std::ifstream& path) {
-  return FileManager::ReadFileContent(path, RemoveExtra);
+  return fm::ReadFileContent(path, RemoveExtra);
 }
 
 void SignatureCompare::SignatureNormalize(FileData& data) {
-  data = std::move(FileManager::TransformFileData(data, RemoveExtra));
+  data = std::move(fm::TransformFileData(data, RemoveExtra));
 }
 
 string SignatureCompare::RemoveExtra(const string& str) {

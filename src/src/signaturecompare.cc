@@ -129,11 +129,11 @@ void SignatureCompare::RemoveVariables(FileData& data) {
                                      "signed"};
 
   UniqVarNames variables;
-  // UniqVarNames typedef_names = GetTypedefNames(data);
-  // for (auto& var : typedef_names) {
-  //   variables.insert(var);
-  //   var_types.push_back(var);
-  // }
+  UniqVarNames typedef_names = GetTypedefNames(data);
+  for (auto& var : typedef_names) {
+    variables.insert(var);
+    var_types.push_back(var);
+  }
 
   size_t find_result{};
   string buffer;
@@ -162,11 +162,27 @@ void SignatureCompare::RemoveVariables(FileData& data) {
 
 UniqVarNames SignatureCompare::GetTypedefNames(
     const std::vector<string>& data) {
-  // bool IsTypedef{};
-  // size_t index{};
+  bool IsTypedef{};
   UniqVarNames typedef_names;
-      if (data.size() > 0 ) return typedef_names;
   std::stack<char> brackets;
+
+  for (auto& line : data) {
+    if (line.find("typedef", 0) != string::npos) {
+      IsTypedef = true;
+      brackets.push('{');
+    } else if (!IsTypedef) {
+      continue;
+    } else if (line.find("{", 0) != string::npos) {
+      brackets.push('{');
+    } else if (line.find("}", 0) != string::npos) {
+      if (brackets.size() > 1) brackets.pop();
+      else {
+        std::cout << "typedef line = " << line << "\n";
+        brackets.pop();
+      }
+    }
+  }
+
 
   return typedef_names;
 }

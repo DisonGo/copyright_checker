@@ -1,5 +1,8 @@
 #include "analyze.h"
 using fm = FileManager;
+using namespace LineCompare;
+using namespace SignatureCompare;
+//  Create Analyze Thread
 #define CAT(repo, peer_files, results, id)                     \
   thread(&Analyze::AnalyzeProject, repo, std::ref(peer_files), \
          std::ref(results), id)
@@ -75,8 +78,8 @@ void Analyze::AnalyzeProject(const RepoPair& reference_path,
   FilePathArrays paths = fm::FindSourcesC(reference_path.second);
   for (auto& peer_file : peer_files) {
     for (auto& reference_files : paths.sources) {
-      signature = GetSignatureCompareInfo(reference_files, peer_file.first);
-      line = GetLineCompareInfo(reference_files, peer_file.first);
+      signature = GetSignatureInfo(reference_files, peer_file.first);
+      line = GetLineInfo(reference_files, peer_file.first);
       AnalyzeInfo current;
       current.id = id;
       current.git_link = reference_path.first;
@@ -90,26 +93,5 @@ void Analyze::AnalyzeProject(const RepoPair& reference_path,
 }
 void Analyze::FillPeerFilesData(FilePathArrays& paths,
                                 PeerFilesData& peerData) {
-  FilesData filesdata;
-  fm::ReadPathArrayData(paths.sources, filesdata);
-  Analyze::FromFilesData(peerData, filesdata);
-}
-
-size_t Analyze::GetLineCompareInfo(const string& reference_file,
-                                   FileData peer_file_data) {
-  return LineCompare::GetLineInfo(reference_file, peer_file_data);
-}
-
-size_t Analyze::GetSignatureCompareInfo(const string& reference_file,
-                                        FileData peer_file_data) {
-  return SignatureCompare::GetSignatureInfo(reference_file, peer_file_data);
-}
-size_t Analyze::GetLineCompareInfo(const string& reference_file,
-                                   const PeerFileData& peer_file_data) {
-  return LineCompare::GetLineInfo(reference_file, peer_file_data);
-}
-
-size_t Analyze::GetSignatureCompareInfo(const string& reference_file,
-                                        const PeerFileData& peer_file_data) {
-  return SignatureCompare::GetSignatureInfo(reference_file, peer_file_data);
+  Analyze::ReadPathArrayData(paths.sources, peerData);
 }

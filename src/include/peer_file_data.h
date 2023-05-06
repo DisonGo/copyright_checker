@@ -15,19 +15,22 @@ class PeerFileData {
 
   PeerFileData();
   PeerFileData(const FileData& source);
-  explicit PeerFileData(const PeerFileData& data);
-  explicit PeerFileData(PeerFileData&& data);
+  PeerFileData(const PeerFileData& data);
+  PeerFileData(PeerFileData&& data);
   ~PeerFileData();
   PeerFileData& operator=(const PeerFileData& data);
   PeerFileData& operator=(PeerFileData&& data);
+  PeerFileData& operator=(const FileData& data);
+  PeerFileData& operator=(FileData&& data);
   void SetSource(const FileData& source);
 
  private:
   void AnalyzeSource();
 };
 
-typedef vector<pair<PeerFileData, string>> PeerFilesData; // Replacement for FilesData
-
+typedef vector<pair<PeerFileData, string>>
+    PeerFilesData;  // Replacement for FilesData
+void ReadPathArrayData(const PathArray& paths, PeerFilesData& files_data);
 void FromFilesData(PeerFilesData& peerData, const FilesData& data);
 }  // namespace Analyze
 #endif  //  SRC_INCLUDE_NALYZE__H
